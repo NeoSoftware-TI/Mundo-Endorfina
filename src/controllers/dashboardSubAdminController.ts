@@ -1,11 +1,11 @@
 import { Response } from 'express';
 import { CustomRequest } from '../types/customTypes';
-import prisma from '../src/prismaClient';
+import prisma from '../prismaClient';
 
 // Visualizar Metas Criadas
 export const visualizarMetas = async (req: CustomRequest, res: Response) => {
     try {
-        const metas = await prisma.metas.findMany();
+        const metas = await prisma.meta.findMany();
         res.status(200).json(metas);
     } catch (error) {
         res.status(500).json({ error: 'Erro ao buscar metas.' });
@@ -15,7 +15,7 @@ export const visualizarMetas = async (req: CustomRequest, res: Response) => {
 // Verificar Cupons
 export const verificarCupons = async (req: CustomRequest, res: Response) => {
     try {
-        const cupons = await prisma.cupons.findMany();
+        const cupons = await prisma.cupom.findMany();
         res.status(200).json(cupons);
     } catch (error) {
         res.status(500).json({ error: 'Erro ao buscar cupons.' });
@@ -25,7 +25,7 @@ export const verificarCupons = async (req: CustomRequest, res: Response) => {
 // Histórico de Metas dos Usuários
 export const historicoMetasUsuarios = async (req: CustomRequest, res: Response) => {
     try {
-        const historico = await prisma.historicoMetas.findMany({
+        const historico = await prisma.historicoMeta.findMany({
             include: { usuario: true }
         });
         res.status(200).json(historico);
@@ -37,7 +37,7 @@ export const historicoMetasUsuarios = async (req: CustomRequest, res: Response) 
 // Feed de Todos os Usuários
 export const visualizarFeed = async (req: CustomRequest, res: Response) => {
     try {
-        const feed = await prisma.postagens.findMany();
+        const feed = await prisma.postagem.findMany();
         res.status(200).json(feed);
     } catch (error) {
         res.status(500).json({ error: 'Erro ao buscar feed de usuários.' });

@@ -8,19 +8,72 @@ datasource db {
 }
 
 model Usuario {
-  id         Int      @id @default(autoincrement())
-  nome       String
-  email      String   @unique
-  corridas   Corrida[]
+  id             Int             @id @default(autoincrement())
+  nome           String
+  email          String          @unique
+  corridas       Corrida[]
+  cupons         Cupom[] // Relação inversa com Cupom
+  historicoMetas HistoricoMeta[] // Relação inversa com HistoricoMeta
+  postagens      Postagem[] // Relação inversa com Postagem
+}
+
+model SubAdmin {
+  id    Int    @id @default(autoincrement())
+  nome  String
+  email String @unique
+  metas Meta[]
 }
 
 model Corrida {
-  id             Int     @id @default(autoincrement())
-  usuarioId      Int
-  tempo           String
-  calorias        Float
-  km              Float
-  foto            String
+  id        Int    @id @default(autoincrement())
+  usuarioId Int
+  tempo     String
+  calorias  Float
+  km        Float
+  foto      String
 
-  usuario        Usuario @relation(fields: [usuarioId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+model Meta {
+  id         Int    @id @default(autoincrement())
+  titulo     String
+  descricao  String
+  pontos     Int
+  subAdminId Int
+
+  subAdmin       SubAdmin        @relation(fields: [subAdminId], references: [id])
+  historicoMetas HistoricoMeta[] // Relação inversa com HistoricoMeta
+}
+
+model Cupom {
+  id        Int    @id @default(autoincrement())
+  codigo    String @unique
+  descricao String
+  valor     Float
+  usuarioId Int
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+model HistoricoMeta {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  metaId    Int
+  concluida Boolean
+  data      DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  meta    Meta    @relation(fields: [metaId], references: [id])
+}
+
+model Postagem {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int
+  descricao   String
+  data        DateTime @default(now())
+  curtidas    Int
+  descurtidas Int
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
 }

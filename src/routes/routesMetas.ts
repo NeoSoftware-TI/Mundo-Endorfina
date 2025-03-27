@@ -1,22 +1,27 @@
 import express from 'express';
-import { Request, Response } from 'express';
+import { Response, NextFunction } from 'express';
 import pool from '../config/database';
 import { verifyToken, isSubAdmin } from '../middlewares/authMiddleware';
 
 const router = express.Router();
 
+interface CustomRequest extends express.Request {
+    user?: { id: number; tipo: string };
+}
+
 // Criar Meta (Somente Sub-Admin)
-router.post('/criar', verifyToken, isSubAdmin, async (req: Request, res: Response) => {
+router.post('/criar', verifyToken, isSubAdmin, async (req: CustomRequest, res: Response): Promise<void> => {
     const { descricao, pontos } = req.body;
 
     if (!descricao || !pontos) {
-        return res.status(400).json({ error: 'Descrição e pontos são obrigatórios.' });
+        res.status(400).json({ error: 'Descrição e pontos são obrigatórios.' });
+        return;
     }
 
     try {
         const [result]: any = await pool.query(
             'INSERT INTO metas (descricao, pontos, id_subadmin) VALUES (?, ?, ?)',
-            [descricao, pontos, req.body.usuario.id]
+            [descricao, pontos, req.user?.id]
         );
 
         res.status(201).json({ message: 'Meta criada com sucesso!', metaId: result.insertId });
@@ -26,7 +31,7 @@ router.post('/criar', verifyToken, isSubAdmin, async (req: Request, res: Respons
 });
 
 // Listar todas as Metas
-router.get('/listar', async (_req, res) => {
+router.get('/listar', async (_req, res): Promise<void> => {
     try {
         const [metas]: any[] = await pool.query('SELECT * FROM metas');
         res.status(200).json(metas);
@@ -36,11 +41,12 @@ router.get('/listar', async (_req, res) => {
 });
 
 // Atribuir Pontos ao Usuário por Meta Concluída
-router.post('/atribuir-pontos', verifyToken, isSubAdmin, async (req: Request, res: Response) => {
+router.post('/atribuir-pontos', verifyToken, isSubAdmin, async (req: CustomRequest, res: Response): Promise<void> => {
     const { id_usuario, id_meta } = req.body;
 
     if (!id_usuario || !id_meta) {
-        return res.status(400).json({ error: 'ID do usuário e ID da meta são obrigatórios.' });
+        res.status(400).json({ error: 'ID do usuário e ID da meta são obrigatórios.' });
+        return;
     }
 
     try {
@@ -49,7 +55,8 @@ router.post('/atribuir-pontos', verifyToken, isSubAdmin, async (req: Request, re
         );
 
         if (!metaExistente.length) {
-            return res.status(404).json({ error: 'Meta não encontrada.' });
+            res.status(404).json({ error: 'Meta não encontrada.' });
+            return;
         }
 
         await pool.query(
@@ -64,7 +71,7 @@ router.post('/atribuir-pontos', verifyToken, isSubAdmin, async (req: Request, re
 });
 
 // Atualizar Meta
-router.put('/atualizar/:id', verifyToken, isSubAdmin, async (req: Request, res: Response) => {
+router.put('/atualizar/:id', verifyToken, isSubAdmin, async (req: CustomRequest, res: Response): Promise<void> => {
     const { id } = req.params;
     const { descricao, pontos } = req.body;
 
@@ -75,7 +82,8 @@ router.put('/atualizar/:id', verifyToken, isSubAdmin, async (req: Request, res: 
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Meta não encontrada.' });
+            res.status(404).json({ error: 'Meta não encontrada.' });
+            return;
         }
 
         res.status(200).json({ message: 'Meta atualizada com sucesso!' });
@@ -85,14 +93,15 @@ router.put('/atualizar/:id', verifyToken, isSubAdmin, async (req: Request, res: 
 });
 
 // Deletar Meta
-router.delete('/deletar/:id', verifyToken, isSubAdmin, async (req: Request, res: Response) => {
+router.delete('/deletar/:id', verifyToken, isSubAdmin, async (req: CustomRequest, res: Response): Promise<void> => {
     const { id } = req.params;
 
     try {
         const [result]: any = await pool.query('DELETE FROM metas WHERE id_meta = ?', [id]);
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Meta não encontrada.' });
+            res.status(404).json({ error: 'Meta não encontrada.' });
+            return;
         }
 
         res.status(200).json({ message: 'Meta deletada com sucesso!' });

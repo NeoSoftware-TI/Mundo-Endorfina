@@ -1,13 +1,16 @@
 import { Response } from 'express';
 import { CustomRequest } from '../types/customTypes';
 import prisma from '../prismaClient';
+import { Corrida } from '@prisma/client';
 
 // Dashboard do Usuário
 export const dashboardUsuario = async (req: CustomRequest, res: Response) => {
+    // Obtém o id do usuário autenticado
     const { id } = req.user!;
 
     try {
-        const usuario = await prisma.usuarios.findUnique({
+        // Usa o modelo correto "usuario" (singular) para a consulta
+        const usuario = await prisma.usuario.findUnique({
             where: { id },
             include: {
                 corridas: true,
@@ -18,16 +21,16 @@ export const dashboardUsuario = async (req: CustomRequest, res: Response) => {
             return res.status(404).json({ error: 'Usuário não encontrado.' });
         }
 
-        const dadosCorrida = usuario.corridas.map((corrida) => ({
+        // Adiciona tipagem explícita para o parâmetro "corrida"
+        const dadosCorrida = usuario.corridas.map((corrida: Corrida) => ({
             tempo: corrida.tempo,
             caloriasPerdidas: corrida.calorias,
             kmPercorridos: corrida.km,
             fotoCorrida: corrida.foto
         }));
 
-        res.status(200).json(dadosCorrida);
+        return res.status(200).json(dadosCorrida);
     } catch (error) {
-        
-        res.status(500).json({ error: 'Erro ao buscar informações do dashboard.' });
+        return res.status(500).json({ error: 'Erro ao buscar informações do dashboard.' });
     }
 };
