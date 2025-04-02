@@ -30,3 +30,15 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
+
+-- ---------------------------------------------------------------------- CHECK - Banco de dados
+
+CREATE DATABASE mundo_endorfina;
+
+USE mundo_endorfina;
+
+SELECT * FROM pessoas;
+
+SHOW DATABASES;
+
+DROP TABLE pessoas, login, metas, pontos_usuarios, reacoes_feed, redes_sociais, sub_admin, historico_metas, historico_postagens, cupons, feed_usuario;

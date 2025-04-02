@@ -1,14 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta';
+const JWT_SECRET = process.env.JWT_SECRET || 'TiagomachadoDev';
 
 interface CustomRequest extends Request {
     user?: { id: number; tipo: string };
 }
 
-// Verifica se o token é válido
-export const verifyToken = (req: CustomRequest, res: Response, next: NextFunction) => {
+export const verifyToken = (req: CustomRequest, res: Response, next: NextFunction): void => {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -27,6 +26,7 @@ export const verifyToken = (req: CustomRequest, res: Response, next: NextFunctio
             next();
         } else {
             res.status(403).json({ error: 'Formato do token inválido.' });
+            return;
         }
     });
 };

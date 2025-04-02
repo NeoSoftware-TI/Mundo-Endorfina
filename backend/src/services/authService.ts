@@ -9,19 +9,19 @@ export const autenticarUsuario = async (usuario: string, senha: string): Promise
     );
 
     if (rows.length === 0) {
-        throw new Error('Usuário não encontrado');
+        throw new Error('Credenciais inválidas');
     }
 
     const user = rows[0];
 
     const senhaCorreta = await bcrypt.compare(senha, user.senha);
     if (!senhaCorreta) {
-        throw new Error('Senha inválida');
+        throw new Error('Credenciais inválidas');
     }
 
     const token = jwt.sign(
         { id: user.id_login, tipo: user.tipo },
-        'seuSegredoJWT',
+        process.env.JWT_SECRET || 'TiagomachadoDev',
         { expiresIn: '2h' }
     );
 

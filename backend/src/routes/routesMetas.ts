@@ -1,6 +1,6 @@
 import express from 'express';
 import { Response, NextFunction } from 'express';
-import pool from '../config/database';
+import { pool } from '../config/database';
 import { verifyToken, isSubAdmin } from '../middlewares/authMiddleware';
 
 const router = express.Router();

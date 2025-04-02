@@ -1,11 +1,9 @@
-USE mundo_endorfina;
-
 -- ---------------------------------------------------------------------- LOGIN - Listar todas as entradas.
 CREATE TABLE login (
     id_login INTEGER AUTO_INCREMENT PRIMARY KEY,
     usuario VARCHAR(100) NOT NULL,
     senha VARCHAR(255) NOT NULL,
-    tipo ENUM('Cliente', 'Sub-Admin') NOT NULL
+    tipo ENUM('Cliente', 'Sub-Admin', 'Admin') NOT NULL
 );
 
 -- ---------------------------------------------------------------------- SUB-ADMIN - Onde todos Sub-Admin irão estar registrados.
@@ -22,6 +20,7 @@ CREATE TABLE pessoas (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     telefone VARCHAR(15),
+    senha VARCHAR(100) NOT NULL,
     id_login INTEGER,
     FOREIGN KEY (id_login) REFERENCES login(id_login)
 );
