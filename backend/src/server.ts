@@ -22,7 +22,7 @@ app.get('/', (req, res) => {
 app.use('/metas', metasRoutes);
 app.use('/subadmin', dashboardSubAdminRoutes);
 app.use('/usuario', dashboardUsuarioRoutes);
-app.use('/login', loginRoutes);
+app.use('/api', loginRoutes);
 app.use('/publicacao', publicacoesRoutes);
 
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));

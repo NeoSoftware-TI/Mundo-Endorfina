@@ -5,18 +5,18 @@ import { pool } from '../config/database';
 
 // Login
 export const loginController = async (req: Request, res: Response): Promise<void> => {
-    const { usuario, senha } = req.body;
+    const { email, senha } = req.body;
 
-    if (!usuario || !senha) {
-        res.status(400).json({ erro: 'Usuário e senha são obrigatórios.' });
+    if (!email || !senha) {
+        res.status(400).json({ erro: 'Email e senha são obrigatórios.' });
         return;
     }
 
     try {
-        const token = await autenticarUsuario(usuario, senha);
+        const token = await autenticarUsuario(email, senha);
         res.status(200).json({ token });
     } catch (error) {
-        res.status(401).json({ erro: 'Usuário ou senha inválidos.' });
+        res.status(401).json({ erro: 'Email ou senha inválidos.' });
     }
 };
 
