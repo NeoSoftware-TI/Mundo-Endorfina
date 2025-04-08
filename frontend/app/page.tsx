@@ -102,9 +102,6 @@ export default function Home() {
           <Button asChild size="lg" className="bg-primary text-white hover:bg-primary/90">
             <Link href="/login">Entrar</Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10">
-            <Link href="/registro">Cadastre-se</Link>
-          </Button>
         </div>
       </div>
     </div>

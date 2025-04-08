@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import FileUploader from "@/components/file-uploader"
+import type { SubmitHandler } from "react-hook-form";
+import { makeInicial } from "@/axios"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
@@ -50,28 +52,57 @@ export default function NovaAtividadePage() {
     },
   })
 
-  function onSubmit(values: AtividadeFormValues) {
-    setIsLoading(true)
+// IMPLEMENTAÇÃO BACK END ------------------------------------------------
 
+const onSubmit: SubmitHandler<AtividadeFormValues> = async (values) => {
+  setIsLoading(true);
+  try {
+    // 1. Criar o post
+    const postRes = await makeInicial.post("post/criar", {
+      titulo: values.titulo,
+      descricao: values.descricao,
+      distancia: values.distancia,
+      tempo: values.tempo,
+      local: values.local,
+    });
+
+    // 2. Upload das imagens se necessário
     if (!activityImage) {
-      toast.error("Você precisa enviar uma foto da sua corrida")
-      setIsLoading(false)
-      return
+      toast.error("Você precisa enviar uma foto da sua corrida");
+      return;
     }
-
     if (!watchImage) {
-      toast.error("Você precisa enviar uma foto do seu smartwatch")
-      setIsLoading(false)
-      return
+      toast.error("Você precisa enviar uma foto do seu smartwatch");
+      return;
     }
 
-    // Simulando o envio da atividade
-    setTimeout(() => {
-      setIsLoading(false)
-      toast.success("Atividade registrada com sucesso!")
-      router.push("/feed")
-    }, 1500)
+    const postId = postRes.data.insertId;
+
+    // 3. Enviar foto da corrida
+    const formData1 = new FormData();
+    formData1.append("foto", activityImage);
+    await makeInicial.post(`post/criar/${postId}/foto-corrida`, formData1, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    // 4. Enviar foto do smartwatch
+    const formData2 = new FormData();
+    formData2.append("foto", watchImage);
+    await makeInicial.post(`post/criar/${postId}/foto-smartwatch`, formData2, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    toast.success("Atividade registrada com sucesso!");
+    router.push("/feed");
+  } catch (error: any) {
+    console.error(error);
+    toast.error("Erro ao registrar atividade.");
+  } finally {
+    setIsLoading(false);
   }
+};
+
+// IMPLEMENTAÇÃO BACK END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-6">

@@ -15,30 +15,17 @@ END$$
 
 DELIMITER ;
 
--- ---------------------------------------------------------------------- RESTRIÇÃO DE REGISTROS - Somente Sub-Admin pode registrar pessoas.
-DELIMITER $$
-CREATE TRIGGER restricao_registro_pessoas
-BEFORE INSERT ON pessoas
-FOR EACH ROW
-BEGIN
-    DECLARE tipo_usuario VARCHAR(20);
-    SELECT tipo INTO tipo_usuario FROM login WHERE id_login = NEW.id_login;
-
-    IF tipo_usuario != 'Sub-Admin' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Somente Sub-Admins podem registrar novas pessoas';
-    END IF;
-END$$
-DELIMITER ;
-
 -- ---------------------------------------------------------------------- CHECK - Banco de dados
-
-CREATE DATABASE mundo_endorfina;
 
 USE mundo_endorfina;
 
+SELECT * FROM login;
 SELECT * FROM pessoas;
+SELECT * FROM admin;
+SELECT * FROM sub_admin;
+SELECT * FROM cliente;
+SELECT * FROM post;
 
-SHOW DATABASES;
+SELECT post.*, pessoas.nome, telefone FROM post JOIN pessoas ON (pessoas.id_pessoa = post.id_pessoa);
 
-DROP TABLE pessoas, login, metas, pontos_usuarios, reacoes_feed, redes_sociais, sub_admin, historico_metas, historico_postagens, cupons, feed_usuario;
+DROP TABLE post; --   admin, cliente, sub_admin, pessoas, login, post, metas, pontos_usuarios, reacoes_feed, redes_sociais, historico_metas, cupons, historico_postagens;

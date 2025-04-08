@@ -31,11 +31,27 @@ export const verifyToken = (req: CustomRequest, res: Response, next: NextFunctio
     });
 };
 
-// Verifica se o usuário é Sub-Admin
-export const isSubAdmin = (req: CustomRequest, res: Response, next: NextFunction) => {
-    if (req.user?.tipo !== 'Sub-Admin') {
-        res.status(403).json({ error: 'Acesso negado. Apenas Sub-Admins podem realizar essa ação.' });
-        return;
-    }
-    next();
-};
+// Verifica autorização
+//export const authorize = (rolesPermitidos: string[]) => {
+//    return (req: Request, res: Response, next: NextFunction): void => {
+//      const authHeader = req.headers.authorization;
+//      if (!authHeader || !authHeader.startsWith("Bearer ")) {//
+//        res.status(401).json({ msg: "Token não fornecido" });
+//        return;
+//      }
+//      const token = authHeader.split(" ")[1];
+//      try {
+//        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: number; tipo: string };
+//        if (!rolesPermitidos.includes(decoded.tipo)) {
+//          res.status(403).json({ msg: "Acesso negado para este tipo de usuário" });
+//          return;
+//        }
+//
+//        (req as any).user = decoded;
+//        next();
+//      } catch (err) {
+//        res.status(401).json({ msg: "Token inválido" });
+//        return;
+//      }
+//    };
+//  };

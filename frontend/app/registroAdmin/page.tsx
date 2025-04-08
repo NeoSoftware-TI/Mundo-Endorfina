@@ -46,7 +46,7 @@ export default function RegistroPage() {
   async function onSubmit(values: RegistroFormValues) {
     setIsLoading(true)
     try {
-      const response = await makeRequest.post("registerCliente", {
+      const response = await makeRequest.post("registerAdmin", {
         nome: values.nome,
         email: values.email,
         telefone: values.telefone,
@@ -55,6 +55,7 @@ export default function RegistroPage() {
       })
 
       toast.success("Cadastro realizado com sucesso!")
+      router.push("/admin")
     } catch (error) {
       toast.error("Erro ao realizar cadastro. Tente novamente.")
     } finally {
@@ -143,14 +144,6 @@ export default function RegistroPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-center text-sm">
-            Já possui uma conta?{" "}
-            <Link href="/login" className="text-primary underline hover:text-primary/80">
-              Faça login
-            </Link>
-          </div>
-        </CardFooter>
       </Card>
     </div>
   )

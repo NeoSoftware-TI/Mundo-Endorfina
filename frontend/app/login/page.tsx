@@ -101,14 +101,6 @@ export default function LoginPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-center text-sm">
-            Ainda não tem uma conta?{" "}
-            <Link href="/registro" className="text-primary underline hover:text-primary/80">
-              Cadastre-se
-            </Link>
-          </div>
-        </CardFooter>
       </Card>
     </div>
   )

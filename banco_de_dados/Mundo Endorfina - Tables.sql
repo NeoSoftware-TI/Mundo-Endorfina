@@ -1,9 +1,21 @@
 -- ---------------------------------------------------------------------- LOGIN - Listar todas as entradas.
 CREATE TABLE login (
     id_login INTEGER AUTO_INCREMENT PRIMARY KEY,
-    usuario VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
     senha VARCHAR(255) NOT NULL,
-    tipo ENUM('Cliente', 'Sub-Admin', 'Admin') NOT NULL
+    tipo ENUM('Visitante','Cliente', 'Sub-Admin', 'Admin') NOT NULL
+);
+
+-- ---------------------------------------------------------------------- ADMIN - Onde todos Admin irão estar registrados.
+CREATE TABLE admin (
+    id_admin INTEGER AUTO_INCREMENT PRIMARY KEY,
+    id_login INTEGER,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    telefone VARCHAR(15),
+    FOREIGN KEY (id_login) REFERENCES login(id_login),
+    FOREIGN KEY (id_pessoa) REFERENCES pessoas(id_pessoa) ON DELETE CASCADE,
+    FOREIGN KEY (id_pessoa) REFERENCES pessoas(id_pessoa) ON UPDATE CASCADE
 );
 
 -- ---------------------------------------------------------------------- SUB-ADMIN - Onde todos Sub-Admin irão estar registrados.
@@ -11,7 +23,23 @@ CREATE TABLE sub_admin (
     id_subadmin INTEGER AUTO_INCREMENT PRIMARY KEY,
     id_login INTEGER,
     nome VARCHAR(100) NOT NULL,
-    FOREIGN KEY (id_login) REFERENCES login(id_login)
+    email VARCHAR(100) UNIQUE NOT NULL,
+    telefone VARCHAR(15),
+    FOREIGN KEY (id_login) REFERENCES login(id_login),
+    FOREIGN KEY (id_pessoa) REFERENCES pessoas(id_pessoa) ON DELETE CASCADE,
+    FOREIGN KEY (id_pessoa) REFERENCES pessoas(id_pessoa) ON UPDATE CASCADE
+);
+
+-- ---------------------------------------------------------------------- SUB-ADMIN - Onde todos Sub-Admin irão estar registrados.
+CREATE TABLE cliente (
+    id_cliente INTEGER AUTO_INCREMENT PRIMARY KEY,
+    id_login INTEGER,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    telefone VARCHAR(15),
+    FOREIGN KEY (id_login) REFERENCES login(id_login),
+    FOREIGN KEY (id_pessoa) REFERENCES pessoas(id_pessoa) ON DELETE CASCADE,
+    FOREIGN KEY (id_pessoa) REFERENCES pessoas(id_pessoa) ON UPDATE CASCADE
 );
 
 -- ---------------------------------------------------------------------- PESSOAS - Todos os indivíduos cadastrados.
@@ -23,6 +51,22 @@ CREATE TABLE pessoas (
     senha VARCHAR(100) NOT NULL,
     id_login INTEGER,
     FOREIGN KEY (id_login) REFERENCES login(id_login)
+);
+
+-- ---------------------------------------------------------------------- INFORMAÇÕES DE POST - Aqui armazena as informações de Tempo de Corrida, KM e Foto da Corrida.
+CREATE TABLE post (
+    id_post INT AUTO_INCREMENT PRIMARY KEY,
+    id_pessoa INTEGER,
+    tempo_corrida TIME NOT NULL,
+    km_percorridos DECIMAL(5,2) NOT NULL,
+    foto_corrida VARCHAR(255),
+    local VARCHAR(100),
+    data_publicacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    descricao TEXT,
+    titulo VARCHAR(100),
+    status ENUM('Aprovada', 'Pendente', 'Rejeitada') DEFAULT 'Pendente',
+    FOREIGN KEY (id_pessoa) REFERENCES pessoas(id_pessoa) ON DELETE CASCADE,
+    FOREIGN KEY (id_pessoa) REFERENCES pessoas(id_pessoa) ON UPDATE CASCADE
 );
 
 -- ---------------------------------------------------------------------- REDES SOCIAIS - Comunicação entre as Pessoas.
@@ -79,20 +123,6 @@ CREATE TABLE cupons (
     id_usuario INTEGER,
     descricao VARCHAR(255) NOT NULL,
     data_resgate DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_usuario) REFERENCES pessoas(id_pessoa)
-);
-
--- ---------------------------------------------------------------------- INFORMAÇÕES DE FEED - Aqui armazena as informações de Calorias perdidas, Tempo de Corrida, KM e Foto da Corrida.
-CREATE TABLE feed_usuario (
-    id_feed INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario INT,
-    tempo_corrida TIME NOT NULL,
-    calorias_perdidas INT NOT NULL,
-    km_percorridos DECIMAL(5,2) NOT NULL,
-    foto_corrida VARCHAR(255),
-    data_publicacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    descricao TEXT,
-    status ENUM('Aprovada', 'Pendente', 'Rejeitada') DEFAULT 'Pendente',
     FOREIGN KEY (id_usuario) REFERENCES pessoas(id_pessoa)
 );
 

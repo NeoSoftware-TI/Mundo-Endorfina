@@ -99,19 +99,21 @@ export default function AdminPage() {
       <Tabs defaultValue="usuarios">
         <TabsList className="mb-6 grid w-full grid-cols-3">
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+          <TabsTrigger value="cupons">Cupons</TabsTrigger>
+          <TabsTrigger value="ranking">Ranking</TabsTrigger>
         </TabsList>
 
         <TabsContent value="usuarios">
   <Card>
     <CardHeader>
-      <CardTitle>Gerenciamento de Sub-Admin</CardTitle>
-      <CardDescription>Gerencie todos os Sub-Admin (Gerentes) da plataforma</CardDescription>
+      <CardTitle>Gerenciamento de Usuários</CardTitle>
+      <CardDescription>Gerencie todos os usuários da plataforma</CardDescription>
     </CardHeader>
     <CardContent>
       <div className="mb-4 flex items-center justify-between">
         <div className="relative w-72">
           <Input
-            placeholder="Buscar Sub-Admin..."
+            placeholder="Buscar usuários..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8"
@@ -120,16 +122,8 @@ export default function AdminPage() {
         </div>
         <Dialog>
           <DialogTrigger asChild>
-            <Button onClick={() => router.push("/registroSub_Admin")}>
-              Registrar Sub-Admin
-            </Button>
-          </DialogTrigger>
-        </Dialog>
-
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button onClick={() => router.push("/registroAdmin")}>
-              Registrar Admin
+            <Button onClick={() => router.push("/registroCliente")}>
+              Registrar Cliente
             </Button>
           </DialogTrigger>
         </Dialog>
@@ -246,6 +240,130 @@ export default function AdminPage() {
     </CardContent>
   </Card>
 </TabsContent>
+
+
+        <TabsContent value="cupons">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gerenciamento de Cupons</CardTitle>
+              <CardDescription>Crie e gerencie todos os cupons da plataforma</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 flex items-center justify-between">
+                <div className="relative w-72">
+                  <Input
+                    placeholder="Buscar cupons..."
+                    value={cuponSearch}
+                    onChange={(e) => setCuponSearch(e.target.value)}
+                    className="pl-8"
+                  />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>Adicionar Cupom</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Novo Cupom</DialogTitle>
+                      <DialogDescription>Preencha os dados do novo cupom</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="titulo" className="text-right">
+                          Título
+                        </Label>
+                        <Input id="titulo" className="col-span-3" />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="marca" className="text-right">
+                          Marca
+                        </Label>
+                        <Input id="marca" className="col-span-3" />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="pontos" className="text-right">
+                          Pontos
+                        </Label>
+                        <Input id="pontos" type="number" className="col-span-3" />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="validade" className="text-right">
+                          Validade
+                        </Label>
+                        <Input id="validade" type="date" className="col-span-3" />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit">Salvar</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Marca</TableHead>
+                      <TableHead>Pontos</TableHead>
+                      <TableHead>Validade</TableHead>
+                      <TableHead>Resgatados</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCupons.map((cupom) => (
+                      <TableRow key={cupom.id}>
+                        <TableCell className="font-medium">{cupom.titulo}</TableCell>
+                        <TableCell>{cupom.marca}</TableCell>
+                        <TableCell>{cupom.pontos}</TableCell>
+                        <TableCell>{cupom.validade}</TableCell>
+                        <TableCell>{cupom.resgatados}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" className="mr-2">
+                            Editar
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive">
+                            Excluir
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ranking">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ranking de Usuários</CardTitle>
+              <CardDescription>Visualize o ranking de usuários com base em pontuação</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UserRanking isAdmin />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   )

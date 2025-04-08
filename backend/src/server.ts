@@ -1,11 +1,12 @@
 import cors from 'cors';
 import express from 'express';
 import bodyParser from "body-parser";
-import metasRoutes from './routes/routesMetas';
+import postRoutes from './routes/routesPost';  
 import loginRoutes from './routes/routesLogin';
-import dashboardSubAdminRoutes from './routes/dashboardSubAdminRoutes';
-import dashboardUsuarioRoutes from './routes/dashboardUsuarioRoutes';
+//import dashboardSubAdminRoutes from './routes/dashboardSubAdminRoutes';
+//import dashboardUsuarioRoutes from './routes/dashboardUsuarioRoutes';
 import publicacoesRoutes from './routes/routesPublicacoes';
+//import permissaoRoutes from './routes/routesPermissao';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -19,10 +20,11 @@ app.get('/', (req, res) => {
 });
 
 // Rotas
-app.use('/metas', metasRoutes);
-app.use('/subadmin', dashboardSubAdminRoutes);
-app.use('/usuario', dashboardUsuarioRoutes);
+app.use('/post', postRoutes);
+//app.use('/subadmin', dashboardSubAdminRoutes);
+//app.use('/usuario', dashboardUsuarioRoutes);
 app.use('/api', loginRoutes);
 app.use('/publicacao', publicacoesRoutes);
+//app.use('/permissao', permissaoRoutes);
 
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
