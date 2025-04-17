@@ -1,23 +1,52 @@
 import { Request, Response } from 'express';
-import { autenticarUsuario } from '../services/authService';
 import bcrypt from 'bcryptjs';
+import jwt from "jsonwebtoken";
 import { pool } from '../config/database';
 
 // --------------------------------------------------------------------------------- LOGIN
 export const loginController = async (req: Request, res: Response): Promise<void> => {
-    const { email, senha } = req.body;
+  const { email, senha } = req.body;
 
-    if (!email || !senha) {
-        res.status(400).json({ erro: 'Email e senha são obrigatórios.' });
-        return;
+  if (!email || !senha) {
+    res.status(400).json({ erro: 'Email e senha são obrigatórios.' });
+    return;
+  }
+
+  try {
+    // Realiza um JOIN para buscar os dados da tabela login e a pessoa vinculada
+    const [rows]: any = await pool.query(
+      `SELECT login.id_login, login.senha, login.tipo, pessoas.id_pessoa 
+       FROM login JOIN pessoas ON login.id_login = pessoas.id_login 
+       WHERE login.email = ?`,
+      [email]
+    );
+
+    if (rows.length === 0) {
+      res.status(404).json({ erro: 'Usuário não encontrado.' });
+      return;
     }
 
-    try {
-        const token = await autenticarUsuario(email, senha);
-        res.status(200).json({ token });
-    } catch (error) {
-        res.status(401).json({ erro: 'Email ou senha inválidos.' });
+    const user = rows[0];
+
+    // Verifica a senha
+    const senhaValida = await bcrypt.compare(senha, user.senha);
+    if (!senhaValida) {
+      res.status(401).json({ erro: 'Senha incorreta.' });
+      return;
     }
+
+    // Gera o token JWT com o id da pessoa
+    const token = jwt.sign(
+      { id: user.id_pessoa, tipo: user.tipo },
+      process.env.JWT_SECRET!,
+      { expiresIn: "2h" }
+    );
+
+    res.status(200).json({ token });
+  } catch (error: any) {
+    console.error("Erro no login:", error.message); // Adicione isso
+    res.status(500).json({ erro: "Erro no servidor.", detalhe: error.message });
+  }
 };
 
 // --------------------------------------------------------------------------------- Registro para Cliente
@@ -76,8 +105,8 @@ export const registerCController = async (req: Request, res: Response): Promise<
 
         // Inserir na tabela cliente
         await pool.query(
-            "INSERT INTO cliente (id_login, nome, email, telefone) VALUES (?, ?, ?, ?)",
-            [id_login, nome, email, telefone]
+            "INSERT INTO cliente (id_login, id_pessoa, nome, email, telefone) VALUES (?, ?, ?, ?, ?)",
+            [id_login, id_pessoa, nome, email, telefone]
         );
 
         // Confirma a transação
@@ -238,54 +267,112 @@ export const registerAController = async (req: Request, res: Response): Promise<
 // --------------------------------------------------------------------------------- DELETE
 
 export const deletePessoa = async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params;
-  
-    try {
-      const [result]: any = await pool.query(
-        "DELETE FROM pessoas WHERE id_pessoa = ?",
-        [id]
-      );
-  
-      if (result.affectedRows === 0) {
-        res.status(404).json({ error: "Pessoa não encontrada." });
-        return;
-      }
-  
-      res.status(200).json({ message: "Pessoa deletada com sucesso!" });
-    } catch (error: any) {
-      console.error(error);
-      res.status(500).json({ error: "Erro ao deletar pessoa." });
+  const { id } = req.params;
+
+  try {
+    // Buscar dados completos da pessoa, login e cliente
+    const [pessoaResult]: any = await pool.query(
+      `SELECT 
+        p.id_pessoa, p.nome, p.email, p.telefone, p.senha, 
+        l.id_login, l.tipo,
+        c.id_cliente
+      FROM pessoas p
+      LEFT JOIN login l ON p.id_login = l.id_login
+      LEFT JOIN cliente c ON p.id_pessoa = c.id_pessoa
+      WHERE p.id_pessoa = ?`,
+      [id]
+    );
+
+    if (pessoaResult.length === 0) {
+      res.status(404).json({ error: "Pessoa não encontrada." });
+      return;
     }
-  };
+
+    const pessoa = pessoaResult[0];
+
+    // Inserir na tabela excluidos
+    await pool.query(
+      `INSERT INTO excluidos 
+        (id_login, id_cliente, id_pessoa, nome, email, telefone, senha, tipo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        pessoa.id_login,
+        pessoa.id_cliente,
+        pessoa.id_pessoa,
+        pessoa.nome,
+        pessoa.email,
+        pessoa.telefone,
+        pessoa.senha,
+        pessoa.tipo,
+      ]
+    );
+
+    // Excluir de tabelas dependentes primeiro
+    await pool.query("DELETE FROM cliente WHERE id_pessoa = ?", [id]);
+    await pool.query("DELETE FROM login WHERE id_login = ?", [pessoa.id_login]);
+    await pool.query("DELETE FROM pessoas WHERE id_pessoa = ?", [id]);
+
+    res.status(200).json({ message: "Pessoa excluída com sucesso e registrada em 'excluidos'." });
+
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao excluir pessoa." });
+  }
+};
 
 // --------------------------------------------------------------------------------- UPDATE
 
 export const updatePessoa = async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params;
-    const { nome, email, telefone } = req.body;
-  
-    if (!nome || !email || !telefone) {
-      res.status(400).json({ error: 'Os campos nome, email e telefone são obrigatórios.' });
+  const { id } = req.params;
+  const { nome, email, telefone } = req.body;
+
+  if (!nome || !email || !telefone) {
+    res.status(400).json({ error: 'Os campos nome, email e telefone são obrigatórios.' });
+    return;
+  }
+
+  try {
+    // Buscar id_login correspondente à pessoa
+    const [pessoaResult]: any = await pool.query(
+      "SELECT id_login FROM pessoas WHERE id_pessoa = ?",
+      [id]
+    );
+
+    if (pessoaResult.length === 0) {
+      res.status(404).json({ error: "Pessoa não encontrada." });
       return;
     }
-  
-    try {
-      const [result]: any = await pool.query(
-        "UPDATE pessoas SET nome = ?, email = ?, telefone = ? WHERE id_pessoa = ?",
-        [nome, email, telefone, id]
+
+    const id_login = pessoaResult[0].id_login;
+
+    // Atualiza a tabela pessoas
+    await pool.query(
+      "UPDATE pessoas SET nome = ?, email = ?, telefone = ? WHERE id_pessoa = ?",
+      [nome, email, telefone, id]
+    );
+
+    // Atualiza a tabela cliente (se existir)
+    await pool.query(
+      "UPDATE cliente SET nome = ?, email = ?, telefone = ? WHERE id_pessoa = ?",
+      [nome, email, telefone, id]
+    );
+
+    // Atualiza a tabela login (se existir)
+    if (id_login) {
+      await pool.query(
+        "UPDATE login SET email = ? WHERE id_login = ?",
+        [email, id_login]
       );
-  
-      if (result.affectedRows === 0) {
-        res.status(404).json({ error: "Pessoa não encontrada." });
-        return;
-      }
-  
-      res.status(200).json({ message: "Pessoa atualizada com sucesso!" });
-    } catch (error: any) {
-      console.error(error);
-      res.status(500).json({ error: "Erro ao atualizar pessoa." });
     }
-  };
+
+    res.status(200).json({ message: "Pessoa, login e cliente atualizados com sucesso!" });
+
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao atualizar dados." });
+  }
+};
+
 
 // --------------------------------------------------------------------------------- TABLES
 
@@ -362,5 +449,25 @@ export const getClientes = async (req: Request, res: Response): Promise<void> =>
     } catch (error: any) {
       console.error("Erro ao buscar Pessoas:", error);
       res.status(500).json({ error: "Erro ao buscar Pessoas" });
+    }
+  };
+
+// --------------------------------------------------------------------------------- PONTOS
+
+  export const getPontos = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    try {
+      const [rows]: any = await pool.query(
+        "SELECT pontos FROM pessoas WHERE id_pessoa = ?",
+        [id]
+      );
+      if (rows.length === 0) {
+        res.status(404).json({ msg: "Cliente não encontrado." });
+        return;
+      }
+      res.status(200).json(rows[0]);
+    } catch (error) {
+      console.error("Erro ao buscar dados do cliente:", error);
+      res.status(500).json({ msg: "Erro no servidor ao buscar dados do cliente." });
     }
   };

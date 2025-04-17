@@ -2,17 +2,26 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { makeRequest } from "@/axios"
+import { jwtDecode } from "jwt-decode";
+
+  type DecodedToken = {
+    id: number
+    tipo: string
+    exp: number
+  }
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const decoded: DecodedToken | null = token ? jwtDecode(token) : null;
+
 
 const registroSchema = z
   .object({
@@ -60,7 +69,7 @@ export default function RegistroPage() {
 // IMPLEMENTAÇÃO BACK END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
       toast.success("Cadastro realizado com sucesso!")
-      router.push("/sub_admin")
+      router.push(`/sub_admin/${decoded ? decoded.id : ""}`)
     } catch (error) {
       toast.error("Erro ao realizar cadastro. Tente novamente.")
     } finally {

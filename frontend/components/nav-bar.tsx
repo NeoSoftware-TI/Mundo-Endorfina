@@ -2,9 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation";
 import { Bell, Menu, User } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,33 +15,59 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { jwtDecode } from "jwt-decode";
 
-export function NavBar() {
-  const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(false)
+  type DecodedToken = {
+    id: number
+    tipo: string
+    exp: number
+  }
 
-  const routes = [
-    {
-      href: "/dashboard",
-      label: "Dashboard",
-      active: pathname === "/dashboard",
-    },
-    {
-      href: "/feed",
-      label: "Feed",
-      active: pathname === "/feed",
-    },
-    {
-      href: "/atividades/nova",
-      label: "Nova Atividade",
-      active: pathname === "/atividades/nova",
-    },
-    {
-      href: "/cupons",
-      label: "Cupons",
-      active: pathname === "/cupons",
-    },
-  ]
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const decoded: DecodedToken | null = token ? jwtDecode(token) : null;
+  
+  export function NavBar() {
+    const pathname = usePathname();
+    const router = useRouter();
+    const [isOpen, setIsOpen] = useState(false);
+
+    const routes = [
+      {
+        href: `/dashboard/${decoded ? decoded.id : ""}`,
+        label: "Dashboard",
+        active: pathname === "/dashboard",
+      },
+      {
+        href: `/feed/${decoded ? decoded.id : ""}`,
+        label: "Feed",
+        active: pathname === "/feed",
+      },
+      {
+        href: `/feedsemid`,
+        label: "Feed",
+        active: pathname === "/feedsemid",
+      },
+      {
+        href: `/atividades/${decoded ? decoded.id : ""}`,
+        label: "Nova Atividade",
+        active: pathname === `/atividades/${decoded ? decoded.id : ""}`,
+      },
+      {
+        href: `/cupons/${decoded ? decoded.id : ""}`,
+        label: "Cupons",
+        active: pathname === "/cupons",
+      },
+      {
+        href: `/sub_admin/${decoded ? decoded.id : ""}`,
+        label: "Sub-Admin",
+        active: pathname === "/sub_admin",
+      },
+      {
+        href: `/admin/${decoded ? decoded.id : ""}`,
+        label: "Admin",
+        active: pathname === "/admin",
+      },
+    ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
@@ -150,14 +175,6 @@ export function NavBar() {
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/configuracoes">Configurações</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/sub_admin">Página do Sub-Admin</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/admin">Página do Admin</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>

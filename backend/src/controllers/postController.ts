@@ -8,6 +8,7 @@ export const createPost = async (req: Request, res: Response): Promise<void> => 
     km_percorridos,
     tempo_corrida,
     local,
+    chegada,
     titulo,
     id_pessoa,
   } = req.body;
@@ -38,32 +39,123 @@ export const createPost = async (req: Request, res: Response): Promise<void> => 
   }
 
   try {
+    await pool.query('START TRANSACTION');
+    
     await pool.query(
       `INSERT INTO post
-         (descricao, foto_corrida, km_percorridos, tempo_corrida, local, titulo, id_pessoa)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (descricao, foto_corrida, km_percorridos, tempo_corrida, local, chegada, titulo, id_pessoa)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         descricao,
         foto_corrida,
         km_percorridos,
         tempo_corrida,
         local,
+        chegada,
         titulo,
         id_pessoa,
       ]
     );
+
+    await pool.query(
+      `UPDATE pessoas 
+       SET km_percorridos = IFNULL(km_percorridos, 0) + ?,
+           pontos = IFNULL(pontos, 0) + (? * 300)
+       WHERE id_pessoa = ?`,
+      [km_percorridos, km_percorridos, id_pessoa]
+    );
+    
+    await pool.query('COMMIT');
     res.status(200).json({ msg: "Post enviado com sucesso" });
   } catch (error) {
+    await pool.query('ROLLBACK');
     console.error("Erro no createPost:", error);
     res.status(500).json({ msg: "Erro no servidor, tente novamente mais tarde" });
   }
 };
 
-export const getPost = async (req: Request, res: Response): Promise<void> => {
+
+// ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+export const getPostall = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
   try {
     const [rows]: any = await pool.query(
-      "SELECT post.*, pessoas.nome, pessoas.telefone FROM post JOIN pessoas ON pessoas.id_pessoa = post.id_pessoa"
+      `SELECT
+         post.id_post AS id,
+         post.descricao,
+         post.foto_corrida,
+         post.km_percorridos,
+         post.tempo_corrida,
+         post.titulo,
+         pessoas.id_pessoa,
+         pessoas.nome,
+         post.data_publicacao,
+         post.local
+       FROM post
+       JOIN pessoas ON post.id_pessoa = pessoas.id_pessoa`,
+      [id]
     );
+
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Erro no getPost:", error);
+    res.status(500).json({ msg: "Erro ao buscar posts." });
+  }
+};
+
+// ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+export const getPostpessoal = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  try {
+    const [rows]: any = await pool.query(
+      `SELECT
+         post.id_post AS id,
+         post.descricao,
+         post.foto_corrida,
+         post.km_percorridos,
+         post.tempo_corrida,
+         post.titulo,
+         pessoas.id_pessoa,
+         pessoas.nome,
+         post.data_publicacao,
+         post.local
+       FROM post
+       JOIN pessoas ON post.id_pessoa = pessoas.id_pessoa
+       WHERE post.id_pessoa = ?`,
+      [id]
+    );
+
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Erro no getPost:", error);
+    res.status(500).json({ msg: "Erro ao buscar posts." });
+  }
+};
+
+// ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+export const getPostpublic = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  try {
+    const [rows]: any = await pool.query(
+      `SELECT
+         post.id_post AS id,
+         post.descricao,
+         post.foto_corrida,
+         post.km_percorridos,
+         post.tempo_corrida,
+         post.titulo,
+         pessoas.id_pessoa,
+         pessoas.nome,
+         post.data_publicacao,
+         post.local
+       FROM post
+       JOIN pessoas ON post.id_pessoa = pessoas.id_pessoa`,
+      [id]
+    );
+
     res.status(200).json(rows);
   } catch (error) {
     console.error("Erro no getPost:", error);

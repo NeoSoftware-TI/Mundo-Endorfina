@@ -30,13 +30,27 @@ interface Cliente {
   status: string;
 }
 
+type Cupom = {
+  id: string;
+  titulo: string;
+  marca: string;
+  pontos: number;
+  validade: string;
+  resgatados: number;
+  disponivel: string;
+};
+
 export default function AdminPage() {
   const [search, setSearch] = useState("")
-  const [cuponSearch, setCuponSearch] = useState("")
   const [pessoas, setPessoas] = useState<Cliente[]>([]);
   const router = useRouter()
   const [loading, setLoading] = useState(true);
-
+  const [cupons, setCupons] = useState<Cupom[]>([]);
+  const [cuponSearch, setCuponSearch] = useState("");
+  const [form, setForm] = useState({
+    titulo: "", marca: "", pontos: "", validade: "",
+  });
+// ////////////////////////////////////////////////////////////////////////// PESSOAS - CHAMAR API
   useEffect(() => {
     async function fetchPessoas() {
       try {
@@ -51,46 +65,54 @@ export default function AdminPage() {
     }
     fetchPessoas();
   }, []);
+// ////////////////////////////////////////////////////////////////////////// CUPOM - CHAMAR API
+  useEffect(() => {
+    async function fetchCupons() {
+      try {
+        const res = await fetch("http://localhost:8000/cupom/ver");
+        const data = await res.json();
+        setCupons(data);
+      } catch (err) {
+        console.error("Erro ao buscar cupons:", err);
+      }
+    }
+    fetchCupons();
+  }, []);
 
-  const cupons = [
-    { id: "1", titulo: "10% de desconto em tênis", marca: "Nike", pontos: 500, validade: "30/06/2023", resgatados: 24 },
-    {
-      id: "2",
-      titulo: "Camiseta técnica grátis",
-      marca: "Adidas",
-      pontos: 750,
-      validade: "15/07/2023",
-      resgatados: 18,
-    },
-    {
-      id: "3",
-      titulo: "Relógio esportivo com 30% OFF",
-      marca: "Garmin",
-      pontos: 1200,
-      validade: "31/07/2023",
-      resgatados: 7,
-    },
-    {
-      id: "4",
-      titulo: "Inscrição gratuita em corrida",
-      marca: "Track&Field",
-      pontos: 1500,
-      validade: "31/08/2023",
-      resgatados: 12,
-    },
-  ]
+  async function adicionarCupom() {
+    const payload = {
+      ...form,
+      pontos: parseInt(form.pontos),
+    };
 
+    try {
+      const res = await fetch("http://localhost:8000/cupom/criar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Erro ao salvar cupom");
+
+      const novoCupom = await res.json();
+      setCupons([...cupons, novoCupom]);
+
+      // Resetar formulário
+      setForm({ titulo: "", marca: "", pontos: "", validade: "", resgates: "", disponivel: "" });
+    } catch (err) {
+      console.error("Erro ao adicionar cupom:", err);
+    }
+  }
+// ////////////////////////////////////////////////////////////////////////// PESSOAS - FILTRO
   const filteredUsers = pessoas.filter(
     (pessoa) =>
       pessoa.nome.toLowerCase().includes(search.toLowerCase()) ||
       pessoa.email.toLowerCase().includes(search.toLowerCase())
   );
-
-  const filteredCupons = cupons.filter(
-    (cupom) =>
-      cupom.titulo.toLowerCase().includes(cuponSearch.toLowerCase()) ||
-      cupom.marca.toLowerCase().includes(cuponSearch.toLowerCase()),
-  )
+// ////////////////////////////////////////////////////////////////////////// CUPOM - FILTRO
+  const filteredCupons = cupons.filter((cupom) =>
+    cupom.titulo.toLowerCase().includes(cuponSearch.toLowerCase())
+  );
 
   return (
     <div className="container mx-auto p-4 py-6">
@@ -140,7 +162,6 @@ export default function AdminPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>Pontos</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -152,17 +173,6 @@ export default function AdminPage() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.telefone}</TableCell>
                     <TableCell>{user.pontos}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                          user.status === "ativo"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {user.status}
-                      </span>
-                    </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Dialog>
                         <DialogTrigger asChild>
@@ -196,6 +206,12 @@ export default function AdminPage() {
                               </Label>
                               <Input id={`telefone-${user.id}`} defaultValue={user.telefone} className="col-span-3" />
                             </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor={`senha-${user.id}`} className="text-right">
+                                Senha
+                              </Label>
+                              <Input id={`senha-${user.id}`} className="col-span-3" />
+                            </div>
                           </div>
                           <DialogFooter>
                             <Button
@@ -205,7 +221,7 @@ export default function AdminPage() {
                                   (document.getElementById(`nome-${user.id}`) as HTMLInputElement).value,
                                   (document.getElementById(`email-${user.id}`) as HTMLInputElement).value,
                                   (document.getElementById(`telefone-${user.id}`) as HTMLInputElement).value,
-                                  user.status
+                                  (document.getElementById(`senha-${user.id}`) as HTMLInputElement).value,
                                 )
                               }
                             >
@@ -240,8 +256,6 @@ export default function AdminPage() {
     </CardContent>
   </Card>
 </TabsContent>
-
-
         <TabsContent value="cupons">
           <Card>
             <CardHeader>
@@ -283,35 +297,96 @@ export default function AdminPage() {
                       <DialogTitle>Adicionar Novo Cupom</DialogTitle>
                       <DialogDescription>Preencha os dados do novo cupom</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="titulo" className="text-right">
-                          Título
-                        </Label>
-                        <Input id="titulo" className="col-span-3" />
+                    {/* Iniciamos um formulário para capturar os dados */}
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const payload = {
+                          titulo: (document.getElementById("titulo") as HTMLInputElement).value,
+                          marca: (document.getElementById("marca") as HTMLInputElement).value,
+                          pontos: parseInt(
+                            (document.getElementById("pontos") as HTMLInputElement).value,
+                            10
+                          ),
+                          validade: (document.getElementById("validade") as HTMLInputElement).value,
+                          resgates: parseInt(
+                            (document.getElementById("resgates") as HTMLInputElement).value,
+                            10
+                          ),
+                          disponivel: (document.getElementById("disponivel") as HTMLInputElement).value,
+                        };
+
+                        try {
+                          const res = await fetch("http://localhost:8000/cupom/criar", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload),
+                          });
+
+                          if (!res.ok) {
+                            throw new Error("Erro ao criar cupom");
+                          }
+
+                          const novoCupom = await res.json();
+
+                          // Você pode atualizar a tabela de cupons chamando uma função ou alterando o estado
+                          // Por exemplo, se a tabela usa o estado "cupons", adicione:
+                          // setCupons((prev) => [...prev, novoCupom]);
+                          // ou chame uma função de callback passada como prop, como onCupomAdicionado(novoCupom);
+
+                          (document.getElementById("titulo") as HTMLInputElement).value = "";
+                          (document.getElementById("marca") as HTMLInputElement).value = "";
+                          (document.getElementById("pontos") as HTMLInputElement).value = "";
+                          (document.getElementById("validade") as HTMLInputElement).value = "";
+                          (document.getElementById("resgates") as HTMLInputElement).value = "";
+                          (document.getElementById("disponivel") as HTMLInputElement).value = "";
+                        } catch (err) {
+                          console.error("Erro ao adicionar cupom:", err);
+                        }
+                      }}
+                    >
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="titulo" className="text-right">
+                            Título
+                          </Label>
+                          <Input id="titulo" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="marca" className="text-right">
+                            Marca
+                          </Label>
+                          <Input id="marca" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="pontos" className="text-right">
+                            Pontos
+                          </Label>
+                          <Input id="pontos" type="number" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="validade" className="text-right">
+                            Validade
+                          </Label>
+                          <Input id="validade" type="date" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-3">
+                          <Label htmlFor="resgates" className="text-right">
+                            Quantos?
+                          </Label>
+                          <Input id="resgates" type="number" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-1">
+                          <Label htmlFor="disponivel" className="text-right">
+                            Está Disponivel?
+                          </Label>
+                          <Input id="disponivel" className="col-span-3" />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="marca" className="text-right">
-                          Marca
-                        </Label>
-                        <Input id="marca" className="col-span-3" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="pontos" className="text-right">
-                          Pontos
-                        </Label>
-                        <Input id="pontos" type="number" className="col-span-3" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="validade" className="text-right">
-                          Validade
-                        </Label>
-                        <Input id="validade" type="date" className="col-span-3" />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button type="submit">Salvar</Button>
-                    </DialogFooter>
+                      <DialogFooter>
+                        <Button type="submit">Salvar</Button>
+                      </DialogFooter>
+                    </form>
                   </DialogContent>
                 </Dialog>
               </div>
@@ -324,7 +399,8 @@ export default function AdminPage() {
                       <TableHead>Marca</TableHead>
                       <TableHead>Pontos</TableHead>
                       <TableHead>Validade</TableHead>
-                      <TableHead>Resgatados</TableHead>
+                      <TableHead>Resgates</TableHead>
+                      <TableHead>Disponivel</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -335,7 +411,8 @@ export default function AdminPage() {
                         <TableCell>{cupom.marca}</TableCell>
                         <TableCell>{cupom.pontos}</TableCell>
                         <TableCell>{cupom.validade}</TableCell>
-                        <TableCell>{cupom.resgatados}</TableCell>
+                        <TableCell>{cupom.resgates}</TableCell>
+                        <TableCell>{cupom.disponivel}</TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="sm" className="mr-2">
                             Editar

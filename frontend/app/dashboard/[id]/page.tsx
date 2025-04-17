@@ -1,3 +1,5 @@
+"use client";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -5,9 +7,77 @@ import { Progress } from "@/components/ui/progress"
 import UserRanking from "@/components/user-ranking"
 import ActivityCard from "@/components/activity-card"
 import Link from "next/link"
-// asdas
+import { useParams } from "next/navigation";
+import { jwtDecode } from "jwt-decode";
+import { useState, useEffect } from "react";
+import MapComponent from "@/components/MapComponent";
+
+// Tipo para o token decodificado
+type DecodedToken = {
+  id: number;
+};
+type Activity = {
+  id: number;
+  foto_corrida: string;
+  km_percorridos: number;
+  titulo: string;
+  data_publicacao: string;
+  local: string;
+  likes: number;
+};
+type UserData = {
+  pontos: number;
+};
+
+const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+const decoded: DecodedToken | null = token ? jwtDecode(token) : null;
+
 export default function DashboardPage() {
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const { id: userId } = useParams();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchUserData() {
+      if (!userId) return;
+  
+      try {
+        const res = await fetch(`http://localhost:8000/api/pontos/${userId}`);
+        if (!res.ok) throw new Error("Erro ao buscar dados do usuário");
+        const data: UserData = await res.json();
+        console.log("Dados do usuário:", data);
+        setUserData(data);
+      } catch (error) {
+        console.error("Erro ao buscar dados do usuário:", error);
+      }
+    }
+  
+    fetchUserData();
+  }, [userId]);
+
+  useEffect(() => {
+    async function fetchActivities() {
+      if (!userId) return;
+  
+      try {
+        const res = await fetch(`http://localhost:8000/post/verpessoal/${userId}`);
+        if (!res.ok) throw new Error("Erro ao buscar atividades");
+        const data: Activity[] = await res.json();
+        console.log("Atividades recebidas:", data);
+        setActivities(data);
+      } catch (error) {
+        console.error("Erro ao buscar atividades:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  
+    fetchActivities();
+  }, [userId]);
+
   return (
+    
     <div className="container mx-auto p-4 py-6">
       <h1 className="mb-8 text-3xl font-bold">Dashboard</h1>
 
@@ -18,9 +88,11 @@ export default function DashboardPage() {
             <CardDescription>Total de pontos disponíveis para trocar</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-primary">1.250</div>
+          <div className="text-4xl font-bold text-primary">
+            {userData ? (userData.pontos != null ? userData.pontos : 0) : "Carregando..."}
+          </div>
             <Button variant="outline" size="sm" className="mt-4 w-full">
-              Resgatar cupons
+            <Link href={`/cupons/${decoded ? decoded.id : ""}`}>Resgatar cupons</Link>
             </Button>
           </CardContent>
         </Card>
@@ -33,28 +105,6 @@ export default function DashboardPage() {
           <CardContent>
             <Progress value={80} className="h-3 w-full" />
             <p className="mt-2 text-sm text-muted-foreground">Faltam 10km para atingir sua meta</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Próximo Nível</CardTitle>
-            <CardDescription>Corredor Avançado</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Progress value={65} className="h-3 w-full" />
-            <p className="mt-2 text-sm text-muted-foreground">750 pontos para o próximo nível</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Próximo Nível</CardTitle>
-            <CardDescription>Corredor Avançado</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Progress value={65} className="h-3 w-full" />
-            <p className="mt-2 text-sm text-muted-foreground">750 pontos para o próximo nível</p>
           </CardContent>
         </Card>
       </div>
@@ -75,31 +125,35 @@ export default function DashboardPage() {
             <div className="flex justify-between">
               <h2 className="text-2xl font-semibold">Atividades Recentes</h2>
               <Button asChild>
-                <Link href="/atividades/nova">Nova Atividade</Link>
+                <Link href={`/atividades/${decoded ? decoded.id : ""}`}>Nova Atividade</Link>
               </Button>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <ActivityCard
-                id="1"
-                title="Corrida Matinal"
-                description="Parque Ibirapuera"
-                distance={5.2}
-                date="Ontem"
-                likes={24}
-                comments={5}
-                imageUrl="/placeholder.svg?height=300&width=500"
-              />
-              <ActivityCard
-                id="2"
-                title="Treino Intervalado"
-                description="Pista de Atletismo"
-                distance={8.5}
-                date="3 dias atrás"
-                likes={37}
-                comments={9}
-                imageUrl="/placeholder.svg?height=300&width=500"
-              />
-            </div>
+
+            {loading ? (
+              <p>Carregando atividades...</p>
+            ) : activities.length === 0 ? (
+              <p>Nenhuma atividade encontrada.</p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {activities.map((activity) => (
+                  <ActivityCard
+                    key={activity.id.toString()}
+                    id_post={activity.id.toString()}
+                    imageUrl={activity.foto_corrida || "/placeholder.svg"}
+                    distance={activity.km_percorridos}
+                    title={activity.titulo}
+                    date={new Date(activity.data_publicacao).toLocaleString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    likes={activity.likes || 0}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
           <TabsContent value="conquistas">
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -187,39 +241,17 @@ export default function DashboardPage() {
               </Card>
             </div>
           </TabsContent> 
-          <TabsContent value="maps" className="space-y-4"> {/* Iniciar o Maps */}
-            <div className="flex justify-between">
-              <h2 className="text-2xl font-semibold">Atividades Recentes</h2>
-              <Button asChild>
-                <Link href="/atividades/nova">Nova Atividade</Link>
-              </Button>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <ActivityCard
-                id="1"
-                title="Corrida Matinal"
-                description="Parque Ibirapuera"
-                distance={5.2}
-                date="Ontem"
-                likes={24}
-                comments={5}
-                imageUrl="/placeholder.svg?height=300&width=500"
-              />
-              <ActivityCard
-                id="2"
-                title="Treino Intervalado"
-                description="Pista de Atletismo"
-                distance={8.5}
-                date="3 dias atrás"
-                likes={37}
-                comments={9}
-                imageUrl="/placeholder.svg?height=300&width=500"
-              />
-            </div>
-          </TabsContent>
+          <TabsContent value="maps" className="mt-8 mb-4 space-y-4">
+          <div className="flex justify-between">
+            <h2 className="text-2xl font-semibold">Mapa</h2>
+          </div>
+          {/* Use diretamente o componente MapComponent */}
+          <div>
+            <MapComponent latitude={-23.55052} longitude={-46.633308} />
+          </div>
+        </TabsContent>
         </Tabs>
       </div>
     </div>
   )
 }
-

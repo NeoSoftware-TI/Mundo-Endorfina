@@ -1,108 +1,106 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { toast } from "sonner"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import FileUploader from "@/components/file-uploader"
-import type { SubmitHandler } from "react-hook-form";
-import { makeInicial } from "@/axios"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FileUploader from "@/components/file-uploader";
+import { makeInicial } from "@/axios";
+import { jwtDecode} from "jwt-decode";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-// Definindo o schema com tipos explícitos
 const atividadeSchema = z.object({
   titulo: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres" }),
   descricao: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres" }),
-  distancia: z.coerce.number().positive({ message: "A distância deve ser maior que zero" }),
-  tempo: z.string().min(3, { message: "O tempo é obrigatório" }),
+  km_percorridos: z.coerce.number().positive({ message: "A distância deve ser maior que zero" }),
+  tempo_corrida: z.string().min(3, { message: "O tempo é obrigatório" }),
   local: z.string().min(3, { message: "O local é obrigatório" }),
-  fotosInformativas: z.boolean().default(false), // Garantindo que é sempre boolean
-})
+  chegada: z.string().min(3, { message: "O local é obrigatório" }),
+  foto_corrida: z.boolean().default(false).optional(),
+  // Removemos id_pessoa do schema, pois será injetado automaticamente a partir do token
+});
 
-// Definindo o tipo a partir do schema
-type AtividadeFormValues = z.infer<typeof atividadeSchema>
+type AtividadeFormValues = z.infer<typeof atividadeSchema>;
+
+// Função para decodificar o token e extrair o ID do usuário
+type DecodedToken = { id: number; tipo: string; exp: number };
+
+function getUserIdFromToken(): string | null {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded: DecodedToken = jwtDecode(token);
+        return decoded.id.toString();
+      } catch (error) {
+        console.error("Erro ao decodificar token:", error);
+      }
+    }
+  }
+  return null;
+}
 
 export default function NovaAtividadePage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [activityImage, setActivityImage] = useState<File | null>(null)
-  const [watchImage, setWatchImage] = useState<File | null>(null)
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [activityImage, setActivityImage] = useState<File | null>(null);
+  const [watchImage, setWatchImage] = useState<File | null>(null);
 
   const form = useForm<AtividadeFormValues>({
     resolver: zodResolver(atividadeSchema),
     defaultValues: {
       titulo: "",
       descricao: "",
-      distancia: 0,
-      tempo: "",
+      km_percorridos: 0,
+      tempo_corrida: "",
       local: "",
-      fotosInformativas: false,
+      chegada: "",
+      foto_corrida: false,
     },
-  })
+  });
 
-// IMPLEMENTAÇÃO BACK END ------------------------------------------------
-
-const onSubmit: SubmitHandler<AtividadeFormValues> = async (values) => {
-  setIsLoading(true);
-  try {
-    // 1. Criar o post
-    const postRes = await makeInicial.post("post/criar", {
-      titulo: values.titulo,
-      descricao: values.descricao,
-      distancia: values.distancia,
-      tempo: values.tempo,
-      local: values.local,
-    });
-
-    // 2. Upload das imagens se necessário
-    if (!activityImage) {
-      toast.error("Você precisa enviar uma foto da sua corrida");
+  const onSubmit: SubmitHandler<AtividadeFormValues> = async (values) => {
+    setIsLoading(true);
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      toast.error("Usuário não autenticado.");
+      setIsLoading(false);
       return;
     }
-    if (!watchImage) {
-      toast.error("Você precisa enviar uma foto do seu smartwatch");
-      return;
+    try {
+      // Cria o post com o ID do usuário extraído
+      const postRes = await makeInicial.post("post/criar", {
+        titulo: values.titulo,
+        descricao: values.descricao,
+        km_percorridos: values.km_percorridos,
+        tempo_corrida: values.tempo_corrida,
+        local: values.local,
+        chegada: values.chegada,
+        foto_corrida: values.foto_corrida,
+        id_pessoa: userId,
+      });
+
+      toast.success("Atividade registrada com sucesso!");
+      router.push(`/feed/${userId}`);
+    } catch (error: any) {
+      console.error("Erro ao registrar atividade:", error);
+      toast.error("Erro ao registrar atividade.");
+    } finally {
+      setIsLoading(false);
     }
-
-    const postId = postRes.data.insertId;
-
-    // 3. Enviar foto da corrida
-    const formData1 = new FormData();
-    formData1.append("foto", activityImage);
-    await makeInicial.post(`post/criar/${postId}/foto-corrida`, formData1, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    // 4. Enviar foto do smartwatch
-    const formData2 = new FormData();
-    formData2.append("foto", watchImage);
-    await makeInicial.post(`post/criar/${postId}/foto-smartwatch`, formData2, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    toast.success("Atividade registrada com sucesso!");
-    router.push("/feed");
-  } catch (error: any) {
-    console.error(error);
-    toast.error("Erro ao registrar atividade.");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-// IMPLEMENTAÇÃO BACK END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  };
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-6">
@@ -113,7 +111,7 @@ const onSubmit: SubmitHandler<AtividadeFormValues> = async (values) => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               <FormField
                 control={form.control}
                 name="titulo"
@@ -142,10 +140,10 @@ const onSubmit: SubmitHandler<AtividadeFormValues> = async (values) => {
                 )}
               />
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
-                  name="distancia"
+                  name="km_percorridos"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Distância (km)</FormLabel>
@@ -159,7 +157,7 @@ const onSubmit: SubmitHandler<AtividadeFormValues> = async (values) => {
 
                 <FormField
                   control={form.control}
-                  name="tempo"
+                  name="tempo_corrida"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tempo</FormLabel>
@@ -182,18 +180,31 @@ const onSubmit: SubmitHandler<AtividadeFormValues> = async (values) => {
                       </FormControl>
                       <FormMessage />
                     </FormItem>
+                  )}/>
+
+                <FormField
+                  control={form.control}
+                  name="chegada"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Chegada</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Parque Ibirapuera" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
                 />
               </div>
 
               <FormField
                 control={form.control}
-                name="fotosInformativas"
+                name="foto_corrida"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Fotos informativas</FormLabel>
-                      <FormDescription>Ativar para destacar informações técnicas nas fotos</FormDescription>
+                      <CardDescription >Ativar para destacar informações técnicas nas fotos</CardDescription>
                     </div>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -233,6 +244,5 @@ const onSubmit: SubmitHandler<AtividadeFormValues> = async (values) => {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

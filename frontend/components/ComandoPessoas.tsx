@@ -18,7 +18,7 @@ import { toast } from "sonner";
     }
   }
   
-  export async function handleUpdate(id: string, nome: string, email: string, telefone: string, status: string) {
+  export async function handleUpdate(id: string, nome: string, email: string, telefone: string, senha: string) {
     console.log("ID para atualizar:", id); // DEBUG
     if (!id) {
       toast.error("ID é obrigatório para atualizar!");

@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import UserRanking from "@/components/user-ranking"
 import {
   Dialog,
   DialogContent,
@@ -26,13 +25,11 @@ interface Cliente {
   nome: string;
   email: string;
   telefone: string;
-  pontos: number;
   status: string;
 }
 
 export default function AdminPage() {
   const [search, setSearch] = useState("")
-  const [cuponSearch, setCuponSearch] = useState("")
   const [pessoas, setPessoas] = useState<Cliente[]>([]);
   const router = useRouter()
   const [loading, setLoading] = useState(true);
@@ -52,45 +49,11 @@ export default function AdminPage() {
     fetchPessoas();
   }, []);
 
-  const cupons = [
-    { id: "1", titulo: "10% de desconto em tênis", marca: "Nike", pontos: 500, validade: "30/06/2023", resgatados: 24 },
-    {
-      id: "2",
-      titulo: "Camiseta técnica grátis",
-      marca: "Adidas",
-      pontos: 750,
-      validade: "15/07/2023",
-      resgatados: 18,
-    },
-    {
-      id: "3",
-      titulo: "Relógio esportivo com 30% OFF",
-      marca: "Garmin",
-      pontos: 1200,
-      validade: "31/07/2023",
-      resgatados: 7,
-    },
-    {
-      id: "4",
-      titulo: "Inscrição gratuita em corrida",
-      marca: "Track&Field",
-      pontos: 1500,
-      validade: "31/08/2023",
-      resgatados: 12,
-    },
-  ]
-
   const filteredUsers = pessoas.filter(
     (pessoa) =>
       pessoa.nome.toLowerCase().includes(search.toLowerCase()) ||
       pessoa.email.toLowerCase().includes(search.toLowerCase())
   );
-
-  const filteredCupons = cupons.filter(
-    (cupom) =>
-      cupom.titulo.toLowerCase().includes(cuponSearch.toLowerCase()) ||
-      cupom.marca.toLowerCase().includes(cuponSearch.toLowerCase()),
-  )
 
   return (
     <div className="container mx-auto p-4 py-6">
@@ -145,8 +108,6 @@ export default function AdminPage() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Telefone</TableHead>
-                <TableHead>Pontos</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -157,18 +118,6 @@ export default function AdminPage() {
                     <TableCell className="font-medium">{user.nome}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.telefone}</TableCell>
-                    <TableCell>{user.pontos}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                          user.status === "ativo"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {user.status}
-                      </span>
-                    </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Dialog>
                         <DialogTrigger asChild>
@@ -202,6 +151,12 @@ export default function AdminPage() {
                               </Label>
                               <Input id={`telefone-${user.id}`} defaultValue={user.telefone} className="col-span-3" />
                             </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor={`senha-${user.id}`} className="text-right">
+                                Senha
+                              </Label>
+                              <Input id={`senha-${user.id}`} className="col-span-3" />
+                            </div>
                           </div>
                           <DialogFooter>
                             <Button
@@ -211,7 +166,7 @@ export default function AdminPage() {
                                   (document.getElementById(`nome-${user.id}`) as HTMLInputElement).value,
                                   (document.getElementById(`email-${user.id}`) as HTMLInputElement).value,
                                   (document.getElementById(`telefone-${user.id}`) as HTMLInputElement).value,
-                                  user.status
+                                  (document.getElementById(`senha-${user.id}`) as HTMLInputElement).value,
                                 )
                               }
                             >

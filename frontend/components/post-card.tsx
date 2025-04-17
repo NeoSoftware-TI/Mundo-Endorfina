@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
 
 interface PostType {
   id: string
-  author: {
+  pessoas: {
     name: string
     avatar: string
   }
@@ -29,7 +29,6 @@ interface PostType {
   time: string
   pace: string
   likes: number
-  comments: number
 }
 
 interface PostCardProps {
@@ -63,11 +62,11 @@ export function PostCard({ post }: PostCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Avatar>
-              <AvatarImage src={post.author.avatar} alt={post.author.name} />
-              <AvatarFallback>{post.author.name[0]}</AvatarFallback>
+              <AvatarImage src={post.pessoas.avatar} alt={post.pessoas.name} />
+              <AvatarFallback>{post.pessoas.name[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-sm font-medium">{post.author.name}</p>
+              <p className="text-sm font-medium">{post.pessoas.name}</p>
               <p className="text-xs text-muted-foreground">{post.date}</p>
             </div>
           </div>
@@ -87,13 +86,13 @@ export function PostCard({ post }: PostCardProps) {
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="px-4 py-0">
+      <CardContent className="px-4 py-0" >
         <p className="mb-4 text-sm">{post.content}</p>
         {post.images.map((image, index) => (
           <div key={index} className="relative mb-4 h-80 w-full overflow-hidden rounded-md">
             <Image
               src={image || "/placeholder.svg"}
-              alt={`Imagem da atividade de ${post.author.name}`}
+              alt={`Imagem da atividade de ${post.pessoas.name}`}
               fill
               className="object-cover"
             />
@@ -108,10 +107,6 @@ export function PostCard({ post }: PostCardProps) {
             <p className="font-semibold text-primary">{post.time}</p>
             <p className="text-xs text-muted-foreground">Tempo</p>
           </div>
-          <div>
-            <p className="font-semibold text-primary">{post.pace}</p>
-            <p className="text-xs text-muted-foreground">Pace Médio</p>
-          </div>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col p-4">
@@ -125,15 +120,6 @@ export function PostCard({ post }: PostCardProps) {
             >
               <Heart className="h-4 w-4" fill={liked ? "currentColor" : "none"} />
               <span>{likes}</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-1"
-              onClick={() => setShowComments(!showComments)}
-            >
-              <MessageCircle className="h-4 w-4" />
-              <span>{post.comments}</span>
             </Button>
           </div>
           <div className="flex space-x-1">

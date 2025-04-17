@@ -5,25 +5,21 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 
 interface ActivityCardProps {
-  id: string
-  title: string
-  description: string
+  id_post: string
+  imageUrl: string
   distance: number
+  title: string
   date: string
   likes: number
-  comments: number
-  imageUrl: string
 }
 
 export default function ActivityCard({
-  id,
-  title,
-  description,
+  id_post,
+  imageUrl,
   distance,
+  title,
   date,
   likes,
-  comments,
-  imageUrl,
 }: ActivityCardProps) {
   return (
     <Card className="overflow-hidden">
@@ -47,7 +43,6 @@ export default function ActivityCard({
           <Image src={imageUrl || "/placeholder.svg"} alt={title} fill className="object-cover" />
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold">{description}</div>
               <div className="rounded-full bg-primary/20 px-2 py-1 text-xs font-semibold text-primary">
                 {distance} km
               </div>
@@ -63,7 +58,6 @@ export default function ActivityCard({
           </Button>
           <Button variant="ghost" size="sm" className="flex items-center gap-1 px-2">
             <MessageCircle className="h-4 w-4" />
-            <span>{comments}</span>
           </Button>
         </div>
         <Button variant="ghost" size="sm" className="px-2">

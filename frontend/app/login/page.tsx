@@ -2,17 +2,16 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { makeRequest } from "@/axios"
+import { jwtDecode } from "jwt-decode";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -34,19 +33,34 @@ export default function LoginPage() {
     },
   })
 
+  type DecodedToken = {
+    id: number
+    tipo: string
+    exp: number
+  }
+
+  const token = localStorage.getItem("token")
+  if (token) {
+    const decoded: DecodedToken = jwtDecode(token)
+    console.log("ID do usuário:", decoded.id)
+  }
+
   // Função de envio do formulário que faz a chamada ao backend
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true)
     try {
-      const response = await makeRequest.post("login", values)
+      const response = await makeRequest.post("login", values);
+      const { token } = response.data;
+      localStorage.setItem("token", token);
+
       console.log(response.data)
-      toast.success("Login realizado com sucesso!")
-      router.push("/dashboard")
-    } catch (err: any) {
-      console.error(err)
-      toast.error("Credenciais inválidas ")
+      toast.success("Login realizado com sucesso!");
+      const decoded: DecodedToken = jwtDecode(token)
+      router.push(`/dashboard/${decoded.id}`)
+    } catch (error: any) {
+      toast.error("Erro no login: " + error.response?.data.erro);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -102,6 +116,19 @@ export default function LoginPage() {
           </Form>
         </CardContent>
       </Card>
+
+
+
+
+
+        <Button onClick={() => router.push("/registroAdmin")}>
+          Registrar Admin
+        </Button>
+        
+
+
+
+      
     </div>
   )
 }

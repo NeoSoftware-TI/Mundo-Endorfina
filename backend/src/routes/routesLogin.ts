@@ -9,6 +9,7 @@ import { getClientes } from "../controllers/loginControllers";
 import { getSubadmin } from "../controllers/loginControllers";
 import { getAdmin } from "../controllers/loginControllers";
 import { getPessoas } from "../controllers/loginControllers";
+import { getPontos } from "../controllers/loginControllers";
 
 const router = express.Router();
 
@@ -22,6 +23,7 @@ router.delete('/pessoasdelete/:id', deletePessoa);
 router.get("/clientes", getClientes);
 router.get("/subadmin", getSubadmin);
 router.get("/admin", getAdmin);
-router.get("/pessoas", getPessoas);
+router.get('/pessoas', getPessoas);
+router.get('/pontos/:id', getPontos);
 
 export default router;
