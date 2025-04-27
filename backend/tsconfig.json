@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2020",                        // Alvo para ECMAScript moderno
+    "module": "commonjs",                      // Módulo CommonJS para Node.js
+    "moduleResolution": "node",                // Resolução de módulos no estilo Node.js
+    "esModuleInterop": true,                   // Permite importar pacotes CommonJS como módulos ES
+    "forceConsistentCasingInFileNames": true,  // Força consistência de maiúsculas/minúsculas no nome dos arquivos
+    "strict": true,                            // Verificação rigorosa de tipos
+    "skipLibCheck": true,                      // Desativa verificação de tipos de bibliotecas
+    "outDir": "./dist",                        // Pasta onde os arquivos compilados serão gerados
+    "rootDir": "./src",                        // Diretório raiz do código-fonte
+    "resolveJsonModule": true,                 // Permite importar arquivos JSON
+    "lib": ["es2020", "dom"]                   // Adiciona bibliotecas modernas (como o DOM)
+  }
+}
