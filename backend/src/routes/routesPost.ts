@@ -9,7 +9,6 @@ const storage = multer.diskStorage({
       cb(null, "uploads/");           // pasta de saída
     },
     filename: (req, file, cb) => {
-      // ex: foto_corrida-1634234234.jpg
       const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
       const ext = file.originalname.split(".").pop();
       cb(null, `${file.fieldname}-${unique}.${ext}`);
@@ -25,6 +24,7 @@ const storage = multer.diskStorage({
     ]),
     createPost
   );
+  
 router.get("/verpessoal/:id", getPostpessoal);
 router.get("/vertodos/:id", getPostall);
 router.get("/verpublic", getPostpublic);

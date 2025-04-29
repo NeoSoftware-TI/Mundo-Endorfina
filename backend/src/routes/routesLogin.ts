@@ -1,5 +1,8 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
 
+import { updateFoto } from '../controllers/loginControllers';
 import { loginController } from '../controllers/loginControllers';
 import { registerCController } from '../controllers/loginControllers';
 import { registerSController } from '../controllers/loginControllers';
@@ -12,7 +15,25 @@ import { getPessoas } from "../controllers/loginControllers";
 import { getPessoasconfig } from "../controllers/loginControllers";
 import { getPontos } from "../controllers/loginControllers";
 
+
 const router = express.Router();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../../uploads'));
+  },
+  filename: (req, file, cb) => {
+    const name = `${file.fieldname}-${Date.now()}`;
+    const ext = path.extname(file.originalname);
+    cb(null, name + ext);
+  },
+});
+const upload = multer({ storage });
+
+router.put(
+  '/colocarFoto/:id',
+  upload.single('foto'),
+  updateFoto
+);
 
 // Rota para login
 router.post('/login', loginController);

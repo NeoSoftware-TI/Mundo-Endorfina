@@ -19,11 +19,24 @@ import { decodeJwt } from "jose";
 
 type Decoded = { id: number; tipo: string; exp: number };
 
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+
+interface UserProfile {
+  foto_url: string | null;
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+
 export function NavBar() {
   // 1. Primeiro todos os states
   const [isClient, setIsClient] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [session, setSession] = useState<Decoded | null>(null);
+  // |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  // |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
   const [loading, setLoading] = useState(true);
 
   // 2. Depois todos os hooks do Next.js
@@ -71,6 +84,56 @@ export function NavBar() {
       setLoading(false);
     }
   }, [isClient, pathname, router]);
+
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+
+  useEffect(() => {
+    if (!isClient) return;
+    const publicRoutes = ["/", "/feedsemid", "/registrotemp"];
+    if (publicRoutes.includes(pathname)) {
+      setLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      if (pathname !== "/login") router.push("/login");
+      setLoading(false);
+      return;
+    }
+
+    let decoded: Decoded;
+    try {
+      decoded = decodeJwt(token) as Decoded;
+      setSession(decoded);
+    } catch {
+      localStorage.removeItem("token");
+      router.push("/login");
+      setLoading(false);
+      return;
+    }
+
+    // Se o id da URL não bater com o do token, redireciona
+    const urlId = pathname.split("/")[2];
+    if (urlId && Number(urlId) !== decoded.id) {
+      router.push(`/dashboard/${decoded.id}`);
+    }
+
+    // 5. fetch do perfil para pegar a foto
+    fetch(`${API_BASE}/api/pessoasconfig/${decoded.id}`, {
+      credentials: "include",
+    })
+      .then(r => r.json())
+      .then((data: UserProfile) => {
+        if (data.foto_url) {
+          setPhotoUrl(`${API_BASE}${data.foto_url}`);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [isClient, pathname, router]);
+
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
 
   // Renderização condicional - mantida após todos os hooks
   if (!isClient) {
@@ -179,7 +242,9 @@ export function NavBar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder.svg" alt="Avatar" />
+                  <AvatarImage 
+                  src={photoUrl ?? "/placeholder.svg"}
+                  alt="Avatar" />
                   <AvatarFallback>ME</AvatarFallback>
                 </Avatar>
               </Button>

@@ -9,6 +9,7 @@ export const getRanking = async (req: Request, res: Response): Promise<void> => 
         id_pessoa,
         nome,
         km_percorridos,
+        foto_url,
         pontos
        FROM pessoas
        ORDER BY km_percorridos DESC

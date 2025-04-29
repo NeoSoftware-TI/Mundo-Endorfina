@@ -9,13 +9,12 @@ import { jwtDecode } from "jwt-decode";
 
 type DecodedToken = { id: number };
 
-// Se já tiver movido para lib/auth, importe de lá:
 function getUserIdFromToken(): string | null {
   if (typeof window === "undefined") return null;
   const token = localStorage.getItem("token");
   if (!token) return null;
   try {
-    return (jwtDecode<DecodedToken>(token)).id.toString();
+    return jwtDecode<DecodedToken>(token).id.toString();
   } catch {
     return null;
   }
@@ -43,20 +42,23 @@ export default function FeedPage() {
         const formatted = data.map((post: any) => ({
           id: post.id,
           pessoas: {
-            id: post.id_pessoa,
             name: post.nome,
-            avatar: "/placeholder.svg?height=48&width=48",
+            foto_url:
+            typeof post.foto_url === "string" && post.foto_url !== ""
+              ? post.foto_url.startsWith("http")
+                ? post.foto_url
+                : `http://localhost:3001${post.foto_url}`
+              : null,
           },
           date: post.data_publicacao,
           content: post.descricao,
-          // monta a URL completa
           images: post.foto_corrida
             ? [`http://localhost:3001/uploads/${post.foto_corrida}`]
             : [],
           distance: post.km_percorridos,
           time: post.tempo_corrida,
-          likes: post.likes,          // já vem do banco
-          dislikes: post.dislikes,    // já vem do banco
+          likes: post.likes,
+          dislikes: post.dislikes,
           local: post.local,
         }));
 

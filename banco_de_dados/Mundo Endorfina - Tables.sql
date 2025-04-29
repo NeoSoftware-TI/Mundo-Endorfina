@@ -14,9 +14,10 @@ CREATE TABLE pessoas (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     telefone VARCHAR(15),
+    foto_url VARCHAR(255) DEFAULT NULL,
     senha VARCHAR(100) NOT NULL,
     pontos INTEGER DEFAULT 0,
-    km_percorridos DECIMAL(5,2) DEFAULT 0,
+    km_percorridos INTEGER DEFAULT 0,
     FOREIGN KEY (id_login) REFERENCES login(id_login) ON DELETE CASCADE
 );
 

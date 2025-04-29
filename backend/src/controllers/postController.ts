@@ -84,6 +84,7 @@ export const getPostall = async (req: Request, res: Response): Promise<void> => 
          post.dislikes,
          pessoas.id_pessoa,
          pessoas.nome,
+         pessoas.foto_url, 
          post.data_publicacao,
          post.local
        FROM post
@@ -115,6 +116,7 @@ export const getPostpessoal = async (req: Request, res: Response): Promise<void>
          post.dislikes,
          pessoas.id_pessoa,
          pessoas.nome,
+         pessoas.foto_url,  
          post.data_publicacao,
          post.local
        FROM post
@@ -135,6 +137,7 @@ export const getPostpessoal = async (req: Request, res: Response): Promise<void>
 export const getPostpublic = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   try {
+    
     const [rows]: any = await pool.query(
       `SELECT
          post.id_post AS id,
@@ -147,6 +150,7 @@ export const getPostpublic = async (req: Request, res: Response): Promise<void> 
          post.dislikes,
          pessoas.id_pessoa,
          pessoas.nome,
+         pessoas.foto_url,
          post.data_publicacao,
          post.local
        FROM post
@@ -216,17 +220,40 @@ export const updatedislikePost = async (req: Request, res: Response): Promise<vo
 
 export const deletePost = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
+  
   try {
-    const [result]: any = await pool.query(
-      "DELETE FROM post WHERE id_post = ?",
+    await pool.query("START TRANSACTION");
+
+    // 1. Recupera apenas km_percorridos e id_pessoa (que já existem)
+    const [postRows]: any = await pool.query(
+      "SELECT km_percorridos, id_pessoa FROM post WHERE id_post = ?",
       [id]
     );
-    if (result.affectedRows === 0) {
+
+    if (postRows.length === 0) {
       res.status(404).json({ error: "Post não encontrado." });
       return;
     }
+
+    const { km_percorridos, id_pessoa } = postRows[0];
+    const pontos_a_remover = km_percorridos * 7; // Calcula na hora
+
+    // 2. Atualização segura
+    await pool.query(
+      `UPDATE pessoas 
+       SET km_percorridos = GREATEST(km_percorridos - ?, 0),
+           pontos = GREATEST(pontos - ?, 0)
+       WHERE id_pessoa = ?`,
+      [km_percorridos, pontos_a_remover, id_pessoa]
+    );
+
+    // 3. Deleta o post
+    await pool.query("DELETE FROM post WHERE id_post = ?", [id]);
+
+    await pool.query("COMMIT");
     res.json({ msg: "Post deletado com sucesso." });
   } catch (err: any) {
+    await pool.query("ROLLBACK");
     console.error("Erro no deletePost:", err);
     res.status(500).json({ error: "Erro interno ao deletar post." });
   }

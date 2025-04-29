@@ -13,15 +13,20 @@ export default function FeedPage() {
     async function fetchPosts() {
 
       try {
-        const response = await fetch(`http://localhost:3001/post/verpublic`);
-        const data = await response.json();
+        const res = await fetch(`http://localhost:3001/post/verpublic`);
+        if (!res.ok) throw new Error("Falha ao buscar posts");
+        const data = await res.json();
 
-        const formattedPosts = data.map((post: any) => ({
+        const formatted = data.map((post: any) => ({
           id: post.id,
           pessoas: {
-            id: post.id_pessoa,
             name: post.nome,
-            avatar: "/placeholder.svg?height=48&width=48",
+            foto_url:
+              typeof post.foto_url === "string" && post.foto_url !== ""
+                ? post.foto_url.startsWith("http")
+                  ? post.foto_url
+                  : `http://localhost:3001${post.foto_url}`
+                : null,
           },
           date: post.data_publicacao,
           content: post.descricao,
@@ -29,24 +34,19 @@ export default function FeedPage() {
             ? [`http://localhost:3001/uploads/${post.foto_corrida}`]
             : [],
           distance: post.km_percorridos,
-          time: post.tempo_corrida.toLocaleString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          time: post.tempo_corrida,
+          likes: post.likes,
+          dislikes: post.dislikes,
           local: post.local,
         }));
 
-        setPosts(formattedPosts);
-      } catch (error) {
-        console.error("Erro ao buscar posts:", error);
+        setPosts(formatted);
+      } catch (err) {
+        console.error("Erro ao buscar posts:", err);
       } finally {
         setLoading(false);
       }
     }
-
     fetchPosts();
   }, [router]);
 

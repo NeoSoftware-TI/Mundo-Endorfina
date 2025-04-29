@@ -19,7 +19,7 @@ interface PostType {
   id: string;
   pessoas: {
     name: string;
-    avatar: string;
+    foto_url: string | null;
   };
   date: string;
   content: string;
@@ -33,6 +33,8 @@ interface PostType {
 interface PostCardProps {
   post: PostType;
 }
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export function PostCard({ post }: PostCardProps) {
   const {
@@ -59,6 +61,14 @@ export function PostCard({ post }: PostCardProps) {
   const usuariosRoles = ["Sub-Admin", "Admin"];
   const usuarios = privilegedRoles.includes(tipo);
   const isSubAdmin = usuariosRoles.includes(tipo);
+
+  const avatarSrc = pessoas.foto_url
+  ? pessoas.foto_url.startsWith("http")
+    ? pessoas.foto_url
+    : pessoas.foto_url.startsWith("/")
+      ? `${API_BASE}${pessoas.foto_url}`
+      : `${API_BASE}/${pessoas.foto_url}`
+  : undefined;
 
   // Like
   async function handleLike() {
@@ -113,16 +123,20 @@ export function PostCard({ post }: PostCardProps) {
       setDeleting(false);
     }
   }
-
+  console.log("Avatar URL:", pessoas.foto_url, "→", pessoas.foto_url?.startsWith("http") ? pessoas.foto_url : `${API_BASE}${pessoas.foto_url}`)
+  
   return (
     <Card className="overflow-hidden">
       <CardHeader className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Avatar>
-              <AvatarImage src={pessoas.avatar} alt={pessoas.name} />
+          <Avatar>
+            {avatarSrc ? (
+              <AvatarImage src={avatarSrc} alt={pessoas.name} />
+            ) : (
               <AvatarFallback>{pessoas.name[0]}</AvatarFallback>
-            </Avatar>
+            )}
+          </Avatar>
             <div>
               <p className="text-sm font-medium">{pessoas.name}</p>
               <p className="text-xs text-muted-foreground">{date}</p>
@@ -133,13 +147,17 @@ export function PostCard({ post }: PostCardProps) {
 
       <CardContent className="px-4 py-0">
         <p className="mb-4 text-sm">{content}</p>
-        {images.map((image, idx) => (
+        {images.map((img, idx) => (
           <div
             key={idx}
             className="relative mb-4 h-80 w-full overflow-hidden rounded-md"
           >
             <Image
-              src={image || "/placeholder.svg"}
+              src={
+                img.startsWith("http")
+                  ? img
+                  : `${API_BASE}${img}`
+              }
               alt={`Imagem da atividade de ${pessoas.name}`}
               fill
               className="object-cover"
@@ -148,7 +166,7 @@ export function PostCard({ post }: PostCardProps) {
         ))}
         <div className="mb-4 grid grid-cols-3 gap-2 rounded-md bg-muted p-3 text-center text-sm">
           <div>
-            <p className="font-semibold text-primary">{distance} km</p>
+            <p className="font-semibold text-primary">{distance.toLocaleString("pt-BR")} km</p>
             <p className="text-xs text-muted-foreground">Distância</p>
           </div>
           <div>
@@ -162,27 +180,27 @@ export function PostCard({ post }: PostCardProps) {
         <div className="flex w-full items-center justify-between">
           <div className="flex space-x-2">
             {usuarios && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("flex items-center gap-1 text-primary")}
-              onClick={handleLike}
-            >
-              <Heart className="h-4 w-4 currentColor" />
-              <span>{likes}</span>
-            </Button>
-          )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn("flex items-center gap-1 text-primary")}
+                onClick={handleLike}
+              >
+                <Heart className="h-4 w-4 currentColor" />
+                <span>{likes}</span>
+              </Button>
+            )}
             {usuarios && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("flex items-center gap-1 text-primary")}
-              onClick={handleDislike}
-            >
-              <ThumbsDown className="h-4 w-4 currentColor" />
-              <span>{dislikes}</span>
-            </Button>
-          )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn("flex items-center gap-1 text-primary")}
+                onClick={handleDislike}
+              >
+                <ThumbsDown className="h-4 w-4 currentColor" />
+                <span>{dislikes}</span>
+              </Button>
+            )}
             {isSubAdmin && (
               <Button
                 variant="ghost"

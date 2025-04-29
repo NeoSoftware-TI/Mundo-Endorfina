@@ -7,9 +7,14 @@ import { Progress } from "@/components/ui/progress";
 import UserRanking from "@/components/user-ranking";
 import ActivityCard from "@/components/activity-card";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { getUserIdFromToken } from "@/lib/auth";
 import { useState, useEffect } from "react";
+
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+import { decodeJwt } from "jose";
+import { usePathname, useRouter } from "next/navigation";
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
 
 type Activity = {
   id: number;
@@ -25,12 +30,29 @@ type UserData = {
   pontos: number;
 };
 
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+type Decoded = { id: number; tipo: string; exp: number };
+
+interface UserProfile {
+  foto_url: string | null;
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+
 export default function DashboardPage() {
   // 1. Primeiro todos os states
   const [isClient, setIsClient] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const pathname = usePathname();
+  const [session, setSession] = useState<Decoded | null>(null);
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+
   const [loading, setLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(true);
 
@@ -94,6 +116,54 @@ export default function DashboardPage() {
 
     loadUserData();
   }, [userId]);
+
+  useEffect(() => {
+    if (!isClient) return;
+    const publicRoutes = ["/", "/feedsemid", "/registrotemp"];
+    if (publicRoutes.includes(pathname)) {
+      setLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      if (pathname !== "/login") router.push("/login");
+      setLoading(false);
+      return;
+    }
+
+    let decoded: Decoded;
+    try {
+      decoded = decodeJwt(token) as Decoded;
+      setSession(decoded);
+    } catch {
+      localStorage.removeItem("token");
+      router.push("/login");
+      setLoading(false);
+      return;
+    }
+
+    // Se o id da URL não bater com o do token, redireciona
+    const urlId = pathname.split("/")[2];
+    if (urlId && Number(urlId) !== decoded.id) {
+      router.push(`/dashboard/${decoded.id}`);
+    }
+    
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
+    // 5. fetch do perfil para pegar a foto
+    fetch(`${API_BASE}/api/pessoasconfig/${decoded.id}`, {
+      credentials: "include",
+    })
+      .then(r => r.json())
+      .then((data: UserProfile) => {
+        if (data.foto_url) {
+          setPhotoUrl(`${API_BASE}${data.foto_url}`);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [isClient, pathname, router]);
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| FOTO
 
   useEffect(() => {
     if (!userId) return;

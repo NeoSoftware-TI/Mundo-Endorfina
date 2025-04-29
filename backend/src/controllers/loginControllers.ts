@@ -466,11 +466,11 @@ export const getClientes = async (req: Request, res: Response): Promise<void> =>
   export const getPessoasconfig = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     try {
-      const [rows]: any = await pool.query(
-        `SELECT nome, email, telefone
-         FROM pessoas
-         WHERE id_pessoa = ?`,
-        [id]
+        const [rows]: any = await pool.query(
+          `SELECT nome, email, telefone, foto_url
+           FROM pessoas
+           WHERE id_pessoa = ?`,
+          [id]
       );
       if (rows.length === 0) {
         res.status(404).json({ error: "Usuário não encontrado." });
@@ -483,6 +483,7 @@ export const getClientes = async (req: Request, res: Response): Promise<void> =>
       res.status(500).json({ error: "Erro ao buscar Pessoa" });
     }
   };
+
 // --------------------------------------------------------------------------------- PONTOS
 
   export const getPontos = async (req: Request, res: Response): Promise<void> => {
@@ -502,3 +503,48 @@ export const getClientes = async (req: Request, res: Response): Promise<void> =>
       res.status(500).json({ msg: "Erro no servidor ao buscar dados do cliente." });
     }
   };
+
+  // --------------------------------------------------------------------------------- IMAGEM
+  
+    export const updateFoto = async (req: Request, res: Response): Promise<void> => {
+      const { id } = req.params;
+      const { nome, email, telefone } = req.body;
+
+      // Validação mínima
+      if (!nome || !email || !telefone) {
+        res.status(404).json({ error: "nome, email e telefone são obrigatórios." });
+        return;
+      }
+    
+      // Se veio arquivo, monta a URL pública
+      let fotoUrl: string | null = null;
+      if (req.file) {
+        fotoUrl = `/uploads/${req.file.filename}`;
+      }
+    
+      try {
+        // Monta dinamicamente o SET
+        const fields = ['nome = ?', 'email = ?', 'telefone = ?'];
+        const params: any[] = [nome, email, telefone];
+    
+        if (fotoUrl) {
+          fields.push('foto_url = ?');
+          params.push(fotoUrl);
+        }
+    
+        params.push(id);
+    
+        const sql = `UPDATE pessoas SET ${fields.join(', ')} WHERE id_pessoa = ?`;
+        const [result]: any = await pool.query(sql, params);
+    
+        if (result.affectedRows === 0) {
+          res.status(404).json({ error: "Usuário não encontrado." });
+          return;
+        }
+    
+        res.json({ message: 'Perfil atualizado com sucesso!', foto_url: fotoUrl });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro interno ao atualizar perfil.' });
+      }
+    };
