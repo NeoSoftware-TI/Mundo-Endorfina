@@ -6,18 +6,15 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { getUserIdFromToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FileUploader from "@/components/file-uploader";
 import { makeInicial } from "@/axios";
-import { decodeJwt } from "jose";
-
+import { getUserIdFromToken } from "@/lib/auth";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -28,14 +25,10 @@ const atividadeSchema = z.object({
   km_percorridos: z.coerce.number().positive({ message: "A distância deve ser maior que zero" }),
   tempo_corrida: z.string().min(3, { message: "O tempo é obrigatório" }),
   local: z.string().min(3, { message: "O local é obrigatório" }),
-  chegada: z.string().min(3, { message: "O local é obrigatório" }),
-  foto_corrida: z.boolean().default(false).optional(),
+  chegada: z.string().min(3, { message: "O local de chegada é obrigatório" }),
 });
 
 type AtividadeFormValues = z.infer<typeof atividadeSchema>;
-
-// Função para decodificar o token e extrair o ID do usuário
-type Decoded = { id: number; [key: string]: any };
 
 export default function NovaAtividadePage() {
   const router = useRouter();
@@ -52,7 +45,6 @@ export default function NovaAtividadePage() {
       tempo_corrida: "",
       local: "",
       chegada: "",
-      foto_corrida: false,
     },
   });
 
@@ -63,14 +55,34 @@ export default function NovaAtividadePage() {
       return;
     }
     setIsLoading(true);
+
+    // monta o FormData
+    const formData = new FormData();
+    formData.append("titulo", values.titulo);
+    formData.append("descricao", values.descricao);
+    formData.append("km_percorridos", values.km_percorridos.toString());
+    formData.append("tempo_corrida", values.tempo_corrida);
+    formData.append("local", values.local);
+    formData.append("chegada", values.chegada);
+    formData.append("id_pessoa", userId.toString());
+
+    // anexa arquivos, se houver
+    if (activityImage) {
+      formData.append("foto_corrida", activityImage);
+    }
+    if (watchImage) {
+      formData.append("foto_smartwatch", watchImage);
+    }
+
     try {
-      await makeInicial.post("post/criar", {
-        ...values,
-        id_pessoa: userId,
+      // envia como multipart/form-data
+      await makeInicial.post("post/criar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       toast.success("Atividade registrada com sucesso!");
       router.push(`/feed/${userId}`);
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Erro ao registrar atividade");
     } finally {
       setIsLoading(false);
@@ -155,7 +167,8 @@ export default function NovaAtividadePage() {
                       </FormControl>
                       <FormMessage />
                     </FormItem>
-                  )}/>
+                  )}
+                />
 
                 <FormField
                   control={form.control}

@@ -3,7 +3,7 @@ import express, { Request, Response } from 'express';
 import cookieParser from "cookie-parser";
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
-
+import path from "path";
 
 import postRoutes from './routes/routesPost';
 import loginRoutes from './routes/routesLogin';
@@ -24,6 +24,10 @@ app.use(
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "../uploads"))
+);
 
 // Rotas
 app.use('/post', postRoutes);

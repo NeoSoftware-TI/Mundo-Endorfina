@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { makeRequest } from "@/axios"
+import InputMask from "react-input-mask";
 import { jwtDecode } from "jwt-decode";
 
 type DecodedToken = {
@@ -18,6 +19,23 @@ type DecodedToken = {
 };
 const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 const decoded: DecodedToken | null = token ? jwtDecode(token) : null;
+
+function formatPhone(value: string) {
+  // tira tudo que não for dígito
+  const digits = value.replace(/\D/g, "");
+  const d1 = digits.slice(0, 2);    // DDD
+  const d2 = digits.slice(2, 7);    // primeiros 5 dígitos
+  const d3 = digits.slice(7, 11);   // últimos 4 dígitos
+  let result = "";
+
+  if (d1) result = `(${d1}`;
+  if (d1.length === 2) result += ") ";
+  if (d2) result += d2;
+  if (d2.length === 5) result += "-";
+  if (d3) result += d3;
+
+  return result;
+}
 
 function getUserIdFromToken(): string | null {
   if (typeof window !== "undefined") {
@@ -38,7 +56,9 @@ const registroSchema = z
   .object({
     nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres" }),
     email: z.string().email({ message: "Email inválido" }),
-    telefone: z.string().min(10, { message: "Telefone inválido" }),
+    telefone: z
+    .string()
+    .regex(/^\(\d{2}\) \d{5}-\d{4}$/, { message: "Telefone deve estar no formato (99) 99999-9999" }),
     senha: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres" }),
     confirmacaoSenha: z.string(),
   })
@@ -129,12 +149,22 @@ export default function RegistroPage() {
                 name="telefone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Telefone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(99) 99999-9999" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="(99) 99999-9999"
+                      // controla o valor formatado
+                      value={field.value}
+                      onChange={e => {
+                        const formatted = formatPhone(e.target.value);
+                        field.onChange(formatted);
+                      }}
+                      onBlur={field.onBlur}
+                      maxLength={15} // opcional
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
                 )}
               />
               <FormField

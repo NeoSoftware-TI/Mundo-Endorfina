@@ -113,6 +113,7 @@ export function NavBar() {
   function handleLogout() {
     localStorage.removeItem("token");
     router.push("/login");
+    router.refresh()
   }
 
   return (
@@ -120,32 +121,36 @@ export function NavBar() {
       <div className="container flex h-16 items-center">
         {/* Menu mobile */}
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-6 w-6" /><span className="sr-only">Abrir menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left">
-            <nav className="grid gap-6 text-lg font-medium">
-              <Link href="/" onClick={() => setIsOpen(false)}>
-                <span className="font-bold">Mundo Endorfina</span>
-              </Link>
-              {visibleRoutes.map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setIsOpen(false)}
-                  className={cn("flex items-center gap-2",pathname === href ? "text-foreground" : "text-muted-foreground")}>
-                </Link>
-              ))}
-            </nav>
-          </SheetContent>
-        </Sheet>
+  <SheetTrigger asChild>
+    <Button variant="ghost" size="icon" className="md:hidden">
+      <Menu className="h-6 w-6" />
+      <span className="sr-only">Abrir menu</span>
+    </Button>
+  </SheetTrigger>
+  <SheetContent side="left">
+    <nav className="grid gap-6 text-lg font-medium">
+      <Link href="/" onClick={() => setIsOpen(false)}>
+        <span className="font-bold">Mundo Endorfina</span>
+      </Link>
+      {visibleRoutes.map(({ href, label }) => (
+        <Link
+          key={href}
+          href={href}
+          onClick={() => setIsOpen(false)}
+          className={cn(
+            "flex items-center gap-2",
+            pathname === href ? "text-foreground" : "text-muted-foreground"
+          )}
+        >
+          {label}
+        </Link>
+      ))}
+    </nav>
+  </SheetContent>
+</Sheet>
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <span className="font-bold">Mundo Endorfina</span>
-        </Link>
+          <span className="font-bold flex items-center gap-2 text-lg font-semibold">Mundo Endorfina</span>
 
         {/* Menu desktop */}
         <nav className="mx-6 hidden items-center space-x-4 md:flex lg:space-x-6">

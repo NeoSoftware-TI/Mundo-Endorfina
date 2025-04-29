@@ -25,10 +25,17 @@ export default function FeedPage() {
           },
           date: post.data_publicacao,
           content: post.descricao,
-          images: post.foto_corrida ? [post.foto_corrida] : [],
+          images: post.foto_corrida
+            ? [`http://localhost:3001/uploads/${post.foto_corrida}`]
+            : [],
           distance: post.km_percorridos,
-          time: post.tempo_corrida,
-          likes: 0,
+          time: post.tempo_corrida.toLocaleString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
           local: post.local,
         }));
 
@@ -45,17 +52,28 @@ export default function FeedPage() {
 
   return (
     
+ <><nav className="sticky top-0 w-full bg-white shadow-md z-50 h-20">
+ <div className="container mx-auto max-w-3xl px-4 h-full grid grid-cols-3 items-center">
+
+   <button
+     type="button"
+     className="w-[140px] bg-blue-500 text-white py-3 rounded-md hover:bg-blue-600 transition"
+     onClick={() => router.push('/login')}
+   >
+     Login
+   </button>
+
+
+   <h1 className="col-span-1 text-center text-2xl font-bold">
+     Timeline
+   </h1>
+
+
+   <div />
+ </div>
+</nav>
+
     <div className="container mx-auto max-w-3xl px-4 py-6">
-    <button
-      type="button"
-      className="w-[120px] bg-blue-500/20"
-      onClick={() => router.push("/login")}
-    >
-      Login
-    </button>
-      <div className="mb-6 flex items-center justify-center">
-        <h1 className="text-2xl font-bold">Feed de Atividades</h1>
-      </div>
       <div className="space-y-6">
         {loading ? (
           <p>Carregando posts...</p>
@@ -66,5 +84,6 @@ export default function FeedPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

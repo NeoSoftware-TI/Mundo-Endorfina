@@ -2,128 +2,152 @@
 
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import jwtDecode from "jwt-decode";
+import { decodeJwt } from "jose";
 
 type DecodedToken = { id: number; tipo: string; exp: number };
-
-// esquema dos dados que chegam da API
 interface UserProfile {
   nome: string;
-  foto_url: string | null;
+  email: string;
+  telefone: string;
 }
 
 export default function EditProfilePage() {
   const router = useRouter();
+
+  // 1) Estados
+  const [isClient, setIsClient] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // estados dos formulários
-  const [name, setName] = useState("");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
 
-  // extrai o ID do user do token
+  // extrai id do token
   function getUserIdFromToken(): number | null {
     if (typeof window === "undefined") return null;
-    const token = localStorage.getItem("token");
-    if (!token) return null;
+    const t = localStorage.getItem("token");
+    if (!t) return null;
     try {
-      return (jwtDecode<DecodedToken>(token)).id;
+      return decodeJwt<DecodedToken>(t).id;
     } catch {
       return null;
     }
   }
 
-  const userId = getUserIdFromToken();
-  if (userId === null) {
-
-    useEffect(() => router.replace("/login"), [router]);
-    return null;
-  }
-
+  // detecta cliente
   useEffect(() => {
-    async function loadProfile() {
+    setIsClient(true);
+  }, []);
+
+  // auth + set userId
+  useEffect(() => {
+    if (!isClient) return;
+    const t = localStorage.getItem("token");
+    if (!t) return router.push("/login");
+
+    const id = getUserIdFromToken();
+    if (!id) return router.push("/login");
+
+    setUserId(id);
+    setLoading(false);
+  }, [isClient, router]);
+
+  // carrega perfil
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/pessoas/${userId}`, {
-          credentials: "include"
-        });
-        if (!res.ok) throw new Error("Não foi possível buscar perfil");
+        const res = await fetch(
+          `http://localhost:3001/api/pessoasconfig/${userId}`,
+          { credentials: "include" }
+        );
+        if (!res.ok) throw new Error("Falha ao carregar perfil");
         const data: UserProfile = await res.json();
-
-        // 2) pré-popula os estados
-        setName(data.nome);
-        setPhotoUrl(data.foto_url);
-
+        setNome(data.nome);
+        setEmail(data.email);
+        setTelefone(data.telefone);
       } catch (err) {
         console.error(err);
-
-      } finally {
-        setLoading(false);
       }
-    }
-    loadProfile();
+    })();
   }, [userId]);
 
-  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setPhotoFile(e.target.files[0]);
-  };
-
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  // submit usa PUT
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!userId) return;
     setSaving(true);
 
     const formData = new FormData();
-    formData.append("nome", name);
-
-    if (photoFile) formData.append("foto", photoFile);
+    formData.append("nome", nome);
+    formData.append("email", email);
+    formData.append("telefone", telefone);
 
     try {
-      const res = await fetch(`http://localhost:3001/api/pessoas/${userId}`, {
-        method: "PUT",
-        credentials: "include",
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Falha ao salvar");
-      router.push("/login/" + userId);
+      const res = await fetch(
+        `http://localhost:3001/api/clienteupdate/${userId}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          body: formData,
+        }
+      );
+      if (!res.ok) throw new Error("Falha ao salvar perfil");
+      alert("Perfil atualizado com sucesso!");
+      router.push(`/dashboard/${userId}`);
     } catch (err) {
       console.error(err);
-      alert("Erro ao salvar perfil");
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) {
-    return <p className="p-4">Carregando perfil…</p>;
+  // loading spinner
+  if (!isClient || loading) {
+    return (
+      <div className="container mx-auto p-4 py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
+  <div className="py-20">
+    <div className="max-w-2xl mx-auto p-4 border border-black p-20 py-6">
       <h1 className="text-2xl font-bold mb-4">Editar Perfil</h1>
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Seção Perfil */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">Perfil</h2>
+          <h2 className="text-xl font-semibold text-blue-500">Perfil</h2>
           <div>
             <label className="block font-medium mb-1">Nome</label>
             <input
               type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
               className="w-full border p-2 rounded"
             />
           </div>
           <div>
-            <label className="block font-medium mb-1">Foto de Perfil</label>
-            {photoUrl && !photoFile && (
-              <img
-                src={photoUrl}
-                alt="Perfil"
-                className="mb-2 w-24 h-24 object-cover rounded-full"
-              />
-            )}
-            <input type="file" accept="image/*" onChange={handlePhotoChange} />
+            <label className="block font-medium mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-1">Telefone</label>
+            <input
+              type="tel"
+              value={telefone}
+              onChange={(e) => setTelefone(e.target.value)}
+              className="w-full border p-2 rounded"
+            />
           </div>
         </section>
 
@@ -136,5 +160,6 @@ export default function EditProfilePage() {
         </button>
       </form>
     </div>
+  </div>
   );
 }

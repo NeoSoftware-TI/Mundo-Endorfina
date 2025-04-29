@@ -324,7 +324,7 @@ export const deletePessoa = async (req: Request, res: Response): Promise<void> =
 
 export const updatePessoa = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { nome, email, telefone, senha } = req.body;
+  const { nome, email, telefone } = req.body;
 
   if (!nome || !email || !telefone) {
     res.status(400).json({ error: 'Os campos [Nome], [Email] e [Telefone] são obrigatórios.' });
@@ -373,6 +373,56 @@ export const updatePessoa = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+export const updateCliente = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { nome, email, telefone } = req.body;
+
+  if (!nome || !email || !telefone) {
+    res.status(400).json({ error: 'Os campos [Nome], [Email] e [Telefone] são obrigatórios.' });
+    return;
+  }
+
+  try {
+    // Buscar id_login correspondente à pessoa
+    const [pessoaResult]: any = await pool.query(
+      "SELECT id_login FROM pessoas WHERE id_pessoa = ?",
+      [id]
+    );
+
+    if (pessoaResult.length === 0) {
+      res.status(404).json({ error: "Pessoa não encontrada." });
+      return;
+    }
+
+    const id_login = pessoaResult[0].id_login;
+
+    // Atualiza a tabela pessoas
+    await pool.query(
+      "UPDATE pessoas SET nome = ?, email = ?, telefone = ? WHERE id_pessoa = ?",
+      [nome, email, telefone, id]
+    );
+
+    // Atualiza a tabela cliente (se existir)
+    await pool.query(
+      "UPDATE cliente SET nome = ?, email = ?, telefone = ? WHERE id_pessoa = ?",
+      [nome, email, telefone, id]
+    );
+
+    // Atualiza a tabela login (se existir)
+    if (id_login) {
+      await pool.query(
+        "UPDATE login SET email = ? WHERE id_login = ?",
+        [email, id_login]
+      );
+    }
+
+    res.status(200).json({ message: "Pessoa, login e cliente atualizados com sucesso!" });
+
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao atualizar dados." });
+  }
+};
 
 // --------------------------------------------------------------------------------- TABLES
 
@@ -413,6 +463,26 @@ export const getClientes = async (req: Request, res: Response): Promise<void> =>
     }
   };
 
+  export const getPessoasconfig = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    try {
+      const [rows]: any = await pool.query(
+        `SELECT nome, email, telefone
+         FROM pessoas
+         WHERE id_pessoa = ?`,
+        [id]
+      );
+      if (rows.length === 0) {
+        res.status(404).json({ error: "Usuário não encontrado." });
+        return;
+      }
+      // devolve um objeto, não um array
+      res.status(200).json(rows[0]);
+    } catch (error: any) {
+      console.error("Erro ao buscar Pessoa:", error);
+      res.status(500).json({ error: "Erro ao buscar Pessoa" });
+    }
+  };
 // --------------------------------------------------------------------------------- PONTOS
 
   export const getPontos = async (req: Request, res: Response): Promise<void> => {

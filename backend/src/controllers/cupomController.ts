@@ -99,7 +99,7 @@ export const deletecupom = async (req: Request, res: Response): Promise<void> =>
 
 export const updatecupom = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { titulo, marca, pontos, validade, resgates, disponivel } = req.body;
+  const { titulo, marca, pontos, validade, disponivel } = req.body;
 
   if (!titulo || !marca || pontos === undefined || !validade || !disponivel) {
     res
@@ -115,10 +115,9 @@ export const updatecupom = async (req: Request, res: Response): Promise<void> =>
              marca     = ?, 
              pontos    = ?, 
              validade  = ?,
-             resgates  = ?, 
              disponivel= ?
        WHERE id_cupom = ?`,
-      [titulo, marca, pontos, validade, resgates, disponivel, id]
+      [titulo, marca, pontos, validade, disponivel, id]
     );
 
     if (result.affectedRows === 0) {
@@ -140,7 +139,7 @@ export const resgatarCupom = async (req: Request, res: Response): Promise<void> 
   const { id_pessoa, id_cupom } = req.params;
 
   try {
-    // 1) Tenta debitar os pontos do usuário apenas se ele tiver saldo suficiente
+    // 1) tenta debitar os pontos somente se houver saldo suficiente
     const [result]: any = await pool.query(
       `UPDATE pessoas
          JOIN cupons ON cupons.id_cupom = ?
@@ -150,7 +149,7 @@ export const resgatarCupom = async (req: Request, res: Response): Promise<void> 
       [id_cupom, id_pessoa]
     );
 
-    // Se não afetou nenhuma linha, ou cupom inválido ou saldo insuficiente
+    // se não afetou nenhuma linha, erro de usuário não existe ou saldo insuficiente
     if (result.affectedRows === 0) {
       const [[userRow]]: any = await pool.query(
         "SELECT pontos FROM pessoas WHERE id_pessoa = ?",
@@ -162,15 +161,16 @@ export const resgatarCupom = async (req: Request, res: Response): Promise<void> 
       } else {
         res.status(400).json({ error: "Saldo insuficiente para resgatar esse cupom." });
       }
+      return; // <— NÃO ESQUEÇA DE DAR RETURN AQUI!
     }
 
-    // 2) Deleta o cupom que acabou de ser resgatado
+    // 2) Deleta o cupom resgatado
     await pool.query(
       "DELETE FROM cupons WHERE id_cupom = ?",
       [id_cupom]
     );
 
-    // 3) Busca o novo saldo do usuário
+    // 3) Busca e retorna o novo saldo
     const [[updated]]: any = await pool.query(
       "SELECT pontos FROM pessoas WHERE id_pessoa = ?",
       [id_pessoa]
@@ -179,6 +179,7 @@ export const resgatarCupom = async (req: Request, res: Response): Promise<void> 
     res
       .status(200)
       .json({ message: "Cupom resgatado com sucesso!", pontosRestantes: updated.pontos });
+
   } catch (error: any) {
     console.error("Erro ao resgatar cupom:", error);
     res.status(500).json({ error: "Erro interno ao resgatar cupom." });

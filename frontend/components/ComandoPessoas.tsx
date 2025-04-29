@@ -51,7 +51,7 @@ import { toast } from "sonner";
       }
     }
     // Função para atualizar um cupom
-    export async function handleUpdatecupom(id: string, titulo: string, marca: string, pontos: number, validade: string, resgates: number, disponivel: string) {
+    export async function handleUpdatecupom(id: string, titulo: string, marca: string, pontos: number, validade: string, disponivel: string) {
       console.log("ID para atualizar:", id);
       if (!id) {
         toast.error("ID é obrigatório para atualizar!");
@@ -64,7 +64,6 @@ import { toast } from "sonner";
           marca,
           pontos,
           validade,
-          resgates,
           disponivel,
         });
         toast.success(response.data.message);

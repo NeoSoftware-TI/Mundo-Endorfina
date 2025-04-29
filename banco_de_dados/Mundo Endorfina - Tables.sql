@@ -56,17 +56,18 @@ CREATE TABLE cliente (
 -- ---------------------------------------------------------------------- INFORMAÇÕES DE POST - Aqui armazena as informações de Tempo de Corrida, KM e Foto da Corrida.
 CREATE TABLE post (
     id_post INT AUTO_INCREMENT PRIMARY KEY,
-    id_pessoa INTEGER,
-    tempo_corrida TIME NOT NULL,
+    titulo VARCHAR(100),
+    descricao TEXT,
     km_percorridos DECIMAL(5,2) NOT NULL,
-    foto_corrida VARCHAR(255),
+    tempo_corrida TIME NOT NULL,
     local VARCHAR(100),
     chegada VARCHAR(100),
+    id_pessoa INTEGER,
+    foto_corrida VARCHAR(255),
+    foto_smartwatch VARCHAR(255),
     data_publicacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    descricao TEXT,
     likes INTEGER,
 	dislikes INTEGER,
-    titulo VARCHAR(100),
     FOREIGN KEY (id_pessoa) REFERENCES pessoas(id_pessoa) ON UPDATE CASCADE
 );
 

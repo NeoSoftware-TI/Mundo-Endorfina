@@ -188,7 +188,11 @@ export default function DashboardPage() {
                   <ActivityCard
                     key={activity.id.toString()}
                     id_post={activity.id.toString()}
-                    imageUrl={activity.foto_corrida || "/placeholder.svg"}
+                    imageUrl={
+                      activity.foto_corrida
+                        ? `http://localhost:3001/uploads/${activity.foto_corrida}`
+                        : "/placeholder.svg"
+                    }
                     distance={activity.km_percorridos}
                     title={activity.titulo}
                     date={new Date(activity.data_publicacao).toLocaleString("pt-BR", {

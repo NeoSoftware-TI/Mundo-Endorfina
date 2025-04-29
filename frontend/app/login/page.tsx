@@ -62,26 +62,19 @@ export default function LoginPage() {
   return (
     <div className="container mx-auto flex h-[calc(100vh-120px)] items-center justify-center px-4 py-6">
       <Card className="w-full max-w-md">
-        <CardContent className="bg-blue-400/20 flex items-center justify-center px-4 py-6">
+        <CardContent className="bg-white flex justify-between py-3">
 
               <Link href="/" passHref>
-              <Button type="submit" className="w-[120px] bg-green-500" >
+              <Button type="submit" className="w-[120px] bg-gray-200/50 text-black" >
                 Inicio
               </Button>
               </Link>
 
               <Link href="/feedsemid" passHref>
-              <Button type="submit" className="w-[120px] bg-blue-500" >
-                Feed
+              <Button type="submit" className="w-[120px] bg-blue-500/80" >
+                Timeline
               </Button>
               </Link>
-
-              <Link href="/registrotemp" passHref>
-              <Button type="submit" className="w-[120px] bg-red-500" >
-                Registro Admin
-              </Button>
-              </Link>
-
         </CardContent>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Entrar</CardTitle>

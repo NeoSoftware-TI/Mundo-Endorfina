@@ -34,4 +34,4 @@ SELECT post.*, pessoas.nome, telefone FROM post JOIN pessoas ON (pessoas.id_pess
 
 DROP TABLE pessoas, login, cliente, admin, sub_admin, post, cupons, excluidos; -- pessoas, login, cliente, admin, sub_admin, post, cupons, excluidos, pontos_usuarios, reacoes_feed, redes_sociais, historico_metas, historico_postagens;
 DROP TABLE pessoas, login;
-DROP TABLE cupons;
+DROP TABLE post;

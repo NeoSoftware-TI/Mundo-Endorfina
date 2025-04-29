@@ -77,20 +77,32 @@ export default function AdminPage() {
   
 
 // ////////////////////////////////////////////////////////////////////////// PESSOAS - CHAMAR API
-  useEffect(() => {
-    async function fetchPessoas() {
-      try {
-        const response = await fetch("http://localhost:3001/api/pessoas");
-        const data = await response.json();
-        setPessoas(data);
-      } catch (error) {
-        console.error("Erro ao buscar pessoas:", error);
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  async function fetchClientes() {
+    try {
+      const res = await fetch("http://localhost:3001/api/clientes");
+      if (!res.ok) {
+        throw new Error(`Erro ${res.status} ao buscar clientes`);
       }
+      const data = await res.json();
+
+      // Verifica se veio um array
+      if (Array.isArray(data)) {
+        setPessoas(data);
+      } else {
+        console.error("Resposta inesperada (esperava array):", data);
+        setPessoas([]);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar clientes:", err);
+      setPessoas([]);
+    } finally {
+      setLoading(false);
     }
-    fetchPessoas();
-  }, []);
+  }
+
+  fetchClientes();
+}, []);
 // ////////////////////////////////////////////////////////////////////////// CUPOM - CHAMAR API
 useEffect(() => {
   async function fetchCupons() {
@@ -173,7 +185,7 @@ useEffect(() => {
                     <TableCell className="font-medium">{user.nome}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.telefone}</TableCell>
-                    <TableCell>{user.pontos}</TableCell>
+                    <TableCell>{user.pontos.toLocaleString("pt-BR")}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Dialog>
                         <DialogTrigger asChild>
@@ -386,7 +398,7 @@ useEffect(() => {
                       <TableRow key={cupom.id}>
                         <TableCell className="font-medium">{cupom.titulo}</TableCell>
                         <TableCell>{cupom.marca}</TableCell>
-                        <TableCell>{cupom.pontos}</TableCell>
+                        <TableCell>{cupom.pontos.toLocaleString("pt-BR")}</TableCell>
                         <TableCell>{cupom.validade}</TableCell>
                         <TableCell>{cupom.link}</TableCell>
                         <TableCell>{cupom.disponivel}</TableCell>
@@ -471,10 +483,6 @@ useEffect(() => {
                                           10
                                         ),
                                         (document.getElementById(`validade-${cupom.id}`) as HTMLInputElement).value,
-                                        parseInt(
-                                          (document.getElementById(`link-${cupom.id}`) as HTMLInputElement).value,
-                                          10
-                                        ),
                                         (document.getElementById(`disponivel-${cupom.id}`) as HTMLInputElement).value
                                       )
                                     }

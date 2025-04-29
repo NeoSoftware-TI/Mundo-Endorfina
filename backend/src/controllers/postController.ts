@@ -3,72 +3,64 @@ import { pool } from '../config/database';
 
 export const createPost = async (req: Request, res: Response): Promise<void> => {
   const {
+    titulo,
     descricao,
-    foto_corrida,
     km_percorridos,
     tempo_corrida,
     local,
     chegada,
-    titulo,
     id_pessoa,
   } = req.body;
 
+  // multer coloca os arquivos em req.files
+  // tipo: { [fieldname: string]: Express.Multer.File[] }
+  const files = req.files as { [key: string]: Express.Multer.File[] };
+  const fotoArquivo = files?.foto_corrida?.[0];
+  const watchArquivo = files?.foto_smartwatch?.[0];
+
+  // pega o nome do arquivo salvo, ou null
+  const foto_corrida = fotoArquivo ? fotoArquivo.filename : null;
+  const foto_smartwatch = watchArquivo ? watchArquivo.filename : null;
+
+  // validações (sem foto ou descrição, etc)
   if (!descricao && !foto_corrida) {
     res.status(422).json({ msg: "O Post precisa ter um Texto ou Imagem!" });
     return;
   }
-  if (km_percorridos == null) {
-    res.status(422).json({ msg: "A distância (km_percorridos) é obrigatória!" });
-    return;
-  }
-  if (!tempo_corrida) {
-    res.status(422).json({ msg: "O tempo da corrida é obrigatório!" });
-    return;
-  }
-  if (!local) {
-    res.status(422).json({ msg: "O local é obrigatório!" });
-    return;
-  }
-  if (!titulo) {
-    res.status(422).json({ msg: "O título é obrigatório!" });
-    return;
-  }
-  if (!id_pessoa) {
-    res.status(422).json({ msg: "O ID da pessoa (id_pessoa) é obrigatório!" });
-    return;
-  }
 
   try {
-    await pool.query('START TRANSACTION');
-    
+    await pool.query("START TRANSACTION");
+
     await pool.query(
       `INSERT INTO post
-         (descricao, foto_corrida, km_percorridos, tempo_corrida, local, chegada, titulo, id_pessoa)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (titulo, descricao, km_percorridos, tempo_corrida, local, chegada, id_pessoa, foto_corrida, foto_smartwatch)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        titulo,
         descricao,
-        foto_corrida,
         km_percorridos,
         tempo_corrida,
         local,
         chegada,
-        titulo,
         id_pessoa,
+        foto_corrida,
+        foto_smartwatch,
       ]
     );
 
+    // atualiza km_percorridos e pontos da pessoa
     await pool.query(
       `UPDATE pessoas 
        SET km_percorridos = IFNULL(km_percorridos, 0) + ?,
-           pontos = IFNULL(pontos, 0) + (? * 1)
+           pontos = IFNULL(pontos, 0) + (? * 7)
        WHERE id_pessoa = ?`,
       [km_percorridos, km_percorridos, id_pessoa]
     );
-    
-    await pool.query('COMMIT');
+
+    await pool.query("COMMIT");
     res.status(200).json({ msg: "Post enviado com sucesso" });
-  } catch (error) {
-    await pool.query('ROLLBACK');
+  } catch (error: any) {
+    await pool.query("ROLLBACK");
     console.error("Erro no createPost:", error);
     res.status(500).json({ msg: "Erro no servidor, tente novamente mais tarde" });
   }
@@ -88,6 +80,8 @@ export const getPostall = async (req: Request, res: Response): Promise<void> => 
          post.km_percorridos,
          post.tempo_corrida,
          post.titulo,
+         post.likes,
+         post.dislikes,
          pessoas.id_pessoa,
          pessoas.nome,
          post.data_publicacao,
@@ -117,6 +111,8 @@ export const getPostpessoal = async (req: Request, res: Response): Promise<void>
          post.km_percorridos,
          post.tempo_corrida,
          post.titulo,
+         post.likes,
+         post.dislikes,
          pessoas.id_pessoa,
          pessoas.nome,
          post.data_publicacao,
@@ -147,6 +143,8 @@ export const getPostpublic = async (req: Request, res: Response): Promise<void> 
          post.km_percorridos,
          post.tempo_corrida,
          post.titulo,
+         post.likes,
+         post.dislikes,
          pessoas.id_pessoa,
          pessoas.nome,
          post.data_publicacao,

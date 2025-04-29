@@ -1,7 +1,6 @@
 import Image from "next/image"
-import { Calendar, Heart, MessageCircle, Share2 } from "lucide-react"
+import { Calendar} from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 
 interface ActivityCardProps {
@@ -14,12 +13,10 @@ interface ActivityCardProps {
 }
 
 export default function ActivityCard({
-  id_post,
   imageUrl,
   distance,
   title,
   date,
-  likes,
 }: ActivityCardProps) {
   return (
     <Card className="overflow-hidden">
@@ -43,27 +40,13 @@ export default function ActivityCard({
           <Image src={imageUrl || "/placeholder.svg"} alt={title} fill className="object-cover" />
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-4">
             <div className="flex items-center justify-between">
-              <div className="rounded-full bg-primary/20 px-2 py-1 text-xs font-semibold text-primary">
+              <div className="rounded-full bg-black px-2 py-1 text-xs font-semibold text-blue-300">
                 {distance} km
               </div>
             </div>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between p-4">
-        <div className="flex gap-4">
-          <Button variant="ghost" size="sm" className="flex items-center gap-1 px-2">
-            <Heart className="h-4 w-4" />
-            <span>{likes}</span>
-          </Button>
-          <Button variant="ghost" size="sm" className="flex items-center gap-1 px-2">
-            <MessageCircle className="h-4 w-4" />
-          </Button>
-        </div>
-        <Button variant="ghost" size="sm" className="px-2">
-          <Share2 className="h-4 w-4" />
-        </Button>
-      </CardFooter>
     </Card>
   )
 }

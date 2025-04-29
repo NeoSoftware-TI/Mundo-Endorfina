@@ -71,11 +71,15 @@ export default function CuponsPage() {
         { method: "POST" }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao resgatar");
+      if (!res.ok) {
+        // agora jogamos um Error de verdade, com mensagem
+        throw new Error(data.error || "Erro ao resgatar");
+      }
       toast.success(data.message);
       setPoints(data.pontosRestantes);
       setMostrarLinkModal(true);
     } catch (err: any) {
+      // aqui err é um Error, então err.message vem preenchido
       toast.error(err.message);
     }
   }
@@ -92,7 +96,8 @@ export default function CuponsPage() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Cupons Disponíveis</h1>
         <p className="mt-2 text-muted-foreground">
-          Troque seus pontos por Cupons Exclusivos - Seus pontos: <strong className="text-primary ">{points.toLocaleString("pt-BR")}</strong>
+          Troque seus pontos por Cupons Exclusivos <br></br>
+          Seus pontos: <strong className="text-primary ">{points.toLocaleString("pt-BR")}</strong>
         </p>
       </div>
 
@@ -151,7 +156,7 @@ export default function CuponsPage() {
                           {cupom.pontos.toLocaleString()}
                         </strong>{" "}
                         pontos. Você tem{" "}
-                        <strong className="text-primary">{points}</strong>.
+                        <strong className="text-primary">{points.toLocaleString()}</strong>.
                       </p>
 
                       <DialogFooter className="gap-2">

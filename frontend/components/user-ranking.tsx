@@ -62,7 +62,7 @@ export default function UserRanking({ isAdmin = false }: UserRankingProps) {
                   </Avatar>
                   <h3 className="text-lg font-semibold">{user.nome}</h3>
                   <div className="my-2 text-center">
-                    <p className="text-2xl font-bold text-primary">{user.pontos}</p>
+                    <p className="text-2xl font-bold text-primary">{user.pontos.toLocaleString("pt-BR")}</p>
                     <p className="text-sm text-muted-foreground">pontos</p>
                   </div>
                   <div className="text-sm text-muted-foreground">{user.km_percorridos} km percorridos</div>
@@ -97,7 +97,7 @@ export default function UserRanking({ isAdmin = false }: UserRankingProps) {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-semibold text-primary">{user.pontos}</div>
+                  <div className="text-lg font-semibold text-primary">{user.pontos.toLocaleString("pt-BR")}</div>
                   <div className="text-xs text-muted-foreground">pontos</div>
                 </div>
               </div>
